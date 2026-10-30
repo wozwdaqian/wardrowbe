@@ -1,0 +1,49 @@
+namespace = "wardrowbe"
+
+[daemons.postgres]
+run = "exec ./scripts/run-postgres.sh"
+port = 15433
+ready_cmd = { run = "./scripts/check-postgres.sh", timeout = "60s" }
+health_cmd = { run = "./scripts/check-postgres.sh", interval = "15s", timeout = "5s", retries = 3 }
+stop_signal = { signal = "SIGINT", timeout = "30s" }
+retry = 3
+
+[daemons.redis]
+run = "exec ./scripts/run-redis.sh"
+port = 16380
+ready_cmd = { run = "./runtime/redis/bin/redis-cli -h 127.0.0.1 -p 16380 ping", timeout = "30s" }
+health_cmd = { run = "./runtime/redis/bin/redis-cli -h 127.0.0.1 -p 16380 ping", interval = "15s", timeout = "5s", retries = 3 }
+retry = 3
+
+[daemons.backend]
+run = "exec ./.venv/bin/python ./scripts/run-service.py backend"
+port = 18084
+depends = ["postgres", "redis"]
+ready_http = { url = "http://127.0.0.1:18084/api/v1/health/ready", timeout = "120s" }
+health_http = { url = "http://127.0.0.1:18084/api/v1/health/ready", interval = "15s", timeout = "5s", retries = 3 }
+retry = 3
+
+[daemons.worker]
+run = "exec ./.venv/bin/python ./scripts/run-service.py worker"
+depends = ["backend", "redis"]
+ready_cmd = { run = "./.venv/bin/python ./scripts/run-service.py check-worker", timeout = "120s" }
+health_cmd = { run = "./.venv/bin/python ./scripts/run-service.py check-worker", interval = "30s", timeout = "5s", retries = 3 }
+retry = 3
+
+[daemons.image-worker]
+run = "exec ./.venv/bin/python ./scripts/run-service.py image-worker"
+depends = ["backend", "redis"]
+ready_cmd = { run = "./.venv/bin/python ./scripts/run-service.py check-image-worker", timeout = "60s" }
+health_cmd = { run = "./.venv/bin/python ./scripts/run-service.py check-image-worker", interval = "30s", timeout = "5s", retries = 3 }
+retry = 3
+
+[daemons.web]
+run = "exec ./start.sh"
+port = 18083
+depends = ["backend"]
+ready_http = { url = "http://127.0.0.1:18083/login", timeout = "60s" }
+health_http = { url = "http://127.0.0.1:18083/api/v1/health/ready", interval = "15s", timeout = "5s", retries = 3 }
+retry = 3
+
+[groups.default]
+daemons = ["postgres", "redis", "backend", "worker", "image-worker", "web"]

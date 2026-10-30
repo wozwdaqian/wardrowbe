@@ -1,0 +1,538 @@
+{
+  "skin_depth": {
+    "fair": {
+      "zh": "很浅",
+      "en": "Fair"
+    },
+    "light": {
+      "zh": "较浅",
+      "en": "Light"
+    },
+    "medium": {
+      "zh": "中等",
+      "en": "Medium"
+    },
+    "tan": {
+      "zh": "棕褐",
+      "en": "Tan"
+    },
+    "deep": {
+      "zh": "深色",
+      "en": "Deep"
+    }
+  },
+  "undertone": {
+    "warm": {
+      "zh": "偏暖（自述）",
+      "en": "Warm (self-reported)"
+    },
+    "cool": {
+      "zh": "偏冷（自述）",
+      "en": "Cool (self-reported)"
+    },
+    "neutral": {
+      "zh": "中性（自述）",
+      "en": "Neutral (self-reported)"
+    }
+  },
+  "hair_color": {
+    "black": {
+      "zh": "黑色",
+      "en": "Black"
+    },
+    "dark_brown": {
+      "zh": "深棕色",
+      "en": "Dark brown"
+    },
+    "light_brown": {
+      "zh": "浅棕色",
+      "en": "Light brown"
+    },
+    "blond": {
+      "zh": "金色",
+      "en": "Blond"
+    },
+    "red": {
+      "zh": "红棕色",
+      "en": "Red"
+    },
+    "grey": {
+      "zh": "灰白色",
+      "en": "Grey / white"
+    },
+    "colored": {
+      "zh": "其他染发色",
+      "en": "Other dyed color"
+    },
+    "shaved": {
+      "zh": "剃短或无发",
+      "en": "Shaved / no hair"
+    }
+  },
+  "eye_color": {
+    "dark": {
+      "zh": "深色",
+      "en": "Dark"
+    },
+    "brown": {
+      "zh": "棕色",
+      "en": "Brown"
+    },
+    "hazel": {
+      "zh": "榛色",
+      "en": "Hazel"
+    },
+    "blue": {
+      "zh": "蓝色",
+      "en": "Blue"
+    },
+    "green": {
+      "zh": "绿色",
+      "en": "Green"
+    },
+    "grey": {
+      "zh": "灰色",
+      "en": "Grey"
+    }
+  },
+  "contrast_preference": {
+    "soft": {
+      "zh": "柔和低对比",
+      "en": "Soft contrast"
+    },
+    "balanced": {
+      "zh": "适中对比",
+      "en": "Balanced contrast"
+    },
+    "bold": {
+      "zh": "鲜明高对比",
+      "en": "Bold contrast"
+    }
+  },
+  "color_families": {
+    "white": {
+      "zh": "白色系",
+      "en": "Whites"
+    },
+    "beige": {
+      "zh": "米色系",
+      "en": "Beiges"
+    },
+    "grey": {
+      "zh": "灰色系",
+      "en": "Greys"
+    },
+    "black": {
+      "zh": "黑色系",
+      "en": "Blacks"
+    },
+    "brown": {
+      "zh": "棕色系",
+      "en": "Browns"
+    },
+    "blue": {
+      "zh": "蓝色系",
+      "en": "Blues"
+    },
+    "green": {
+      "zh": "绿色系",
+      "en": "Greens"
+    },
+    "red": {
+      "zh": "红色系",
+      "en": "Reds"
+    },
+    "purple": {
+      "zh": "紫色系",
+      "en": "Purples"
+    },
+    "yellow": {
+      "zh": "黄色系",
+      "en": "Yellows"
+    },
+    "orange": {
+      "zh": "橙色系",
+      "en": "Oranges"
+    },
+    "pink": {
+      "zh": "粉色系",
+      "en": "Pinks"
+    }
+  },
+  "materials": {
+    "cotton": {
+      "zh": "棉",
+      "en": "Cotton"
+    },
+    "cotton_blend": {
+      "zh": "棉混纺",
+      "en": "Cotton blend"
+    },
+    "linen": {
+      "zh": "亚麻",
+      "en": "Linen"
+    },
+    "linen_blend": {
+      "zh": "亚麻混纺",
+      "en": "Linen blend"
+    },
+    "wool": {
+      "zh": "羊毛",
+      "en": "Wool"
+    },
+    "wool_blend": {
+      "zh": "羊毛混纺",
+      "en": "Wool blend"
+    },
+    "silk": {
+      "zh": "真丝",
+      "en": "Silk"
+    },
+    "viscose": {
+      "zh": "粘胶",
+      "en": "Viscose"
+    },
+    "lyocell": {
+      "zh": "莱赛尔",
+      "en": "Lyocell"
+    },
+    "denim": {
+      "zh": "牛仔布（成分看标签）",
+      "en": "Denim (check fiber label)"
+    },
+    "leather": {
+      "zh": "皮革",
+      "en": "Leather"
+    },
+    "vegan_leather": {
+      "zh": "人造革",
+      "en": "Synthetic leather"
+    },
+    "synthetic": {
+      "zh": "合成纤维",
+      "en": "Synthetic fibers"
+    }
+  },
+  "fabric_preferences": {
+    "breathable": {
+      "zh": "重视透气",
+      "en": "Breathability"
+    },
+    "easy_care": {
+      "zh": "便于打理",
+      "en": "Easy care"
+    },
+    "soft_touch": {
+      "zh": "柔软不扎",
+      "en": "Soft touch"
+    },
+    "structured": {
+      "zh": "挺括有支撑",
+      "en": "Crisp structure"
+    },
+    "fluid": {
+      "zh": "柔软垂坠",
+      "en": "Fluid drape"
+    },
+    "matte": {
+      "zh": "偏好哑光",
+      "en": "Matte finish"
+    }
+  },
+  "fit_issues": {
+    "shoulders_tight": {
+      "zh": "上衣肩背紧",
+      "en": "Tight shoulders / upper back"
+    },
+    "belly_cling": {
+      "zh": "上衣贴腹部",
+      "en": "Clings around abdomen"
+    },
+    "thighs_tight": {
+      "zh": "裤子大腿紧",
+      "en": "Tight thighs"
+    },
+    "calves_tight": {
+      "zh": "裤子小腿紧",
+      "en": "Tight calves"
+    },
+    "rise_uncomfortable": {
+      "zh": "裤裆不舒服",
+      "en": "Uncomfortable rise"
+    },
+    "hem_bunches": {
+      "zh": "裤脚堆积",
+      "en": "Bunched trouser hems"
+    },
+    "sleeves_long": {
+      "zh": "袖子经常过长",
+      "en": "Sleeves often too long"
+    },
+    "sleeves_short": {
+      "zh": "袖子经常偏短",
+      "en": "Sleeves often too short"
+    }
+  },
+  "construction": {
+    "poplin": {
+      "zh": "府绸平纹",
+      "en": "Poplin"
+    },
+    "oxford": {
+      "zh": "牛津纺",
+      "en": "Oxford weave"
+    },
+    "twill": {
+      "zh": "斜纹",
+      "en": "Twill"
+    },
+    "jersey": {
+      "zh": "针织平纹",
+      "en": "Jersey"
+    },
+    "pique": {
+      "zh": "珠地组织",
+      "en": "Pique"
+    },
+    "knit": {
+      "zh": "针织组织",
+      "en": "Knit"
+    },
+    "linen_weave": {
+      "zh": "亚麻感平纹",
+      "en": "Linen-like plain weave"
+    },
+    "flannel": {
+      "zh": "法兰绒",
+      "en": "Flannel"
+    },
+    "denim_weave": {
+      "zh": "牛仔斜纹",
+      "en": "Denim twill"
+    },
+    "canvas": {
+      "zh": "帆布组织",
+      "en": "Canvas"
+    },
+    "fleece": {
+      "zh": "卫衣绒组织",
+      "en": "Fleece"
+    },
+    "technical": {
+      "zh": "功能织物",
+      "en": "Technical fabric"
+    },
+    "mesh": {
+      "zh": "网眼组织",
+      "en": "Mesh"
+    }
+  },
+  "weight": {
+    "light": {
+      "zh": "轻薄",
+      "en": "Lightweight"
+    },
+    "medium": {
+      "zh": "中等厚度",
+      "en": "Medium weight"
+    },
+    "heavy": {
+      "zh": "厚实",
+      "en": "Heavyweight"
+    }
+  },
+  "drape": {
+    "fluid": {
+      "zh": "柔软垂坠",
+      "en": "Fluid drape"
+    },
+    "balanced": {
+      "zh": "软硬适中",
+      "en": "Balanced drape"
+    },
+    "crisp": {
+      "zh": "挺括有支撑",
+      "en": "Crisp structure"
+    }
+  },
+  "sheen": {
+    "matte": {
+      "zh": "哑光",
+      "en": "Matte"
+    },
+    "subtle": {
+      "zh": "微光泽",
+      "en": "Subtle sheen"
+    },
+    "glossy": {
+      "zh": "明显光泽",
+      "en": "Glossy"
+    }
+  },
+  "stretch": {
+    "none": {
+      "zh": "无明显弹性",
+      "en": "Little stretch"
+    },
+    "slight": {
+      "zh": "微弹",
+      "en": "Slight stretch"
+    },
+    "stretchy": {
+      "zh": "弹性明显",
+      "en": "Stretchy"
+    }
+  },
+  "color_strategy": {
+    "tonal": {
+      "zh": "同色层次",
+      "en": "Tonal layers"
+    },
+    "accent": {
+      "zh": "重点色点缀",
+      "en": "Accent color"
+    },
+    "echo": {
+      "zh": "单品颜色呼应",
+      "en": "Color echo"
+    },
+    "contrast": {
+      "zh": "明暗或色相对比",
+      "en": "Color contrast"
+    }
+  },
+  "colors": {
+    "#ffffff": {
+      "zh": "白色",
+      "en": "White",
+      "family": "white",
+      "lightness": "light"
+    },
+    "#efe8dd": {
+      "zh": "米白色",
+      "en": "Ivory",
+      "family": "white",
+      "lightness": "light"
+    },
+    "#d3be97": {
+      "zh": "燕麦色",
+      "en": "Oatmeal",
+      "family": "beige",
+      "lightness": "light"
+    },
+    "#b69b79": {
+      "zh": "驼色",
+      "en": "Camel",
+      "family": "brown",
+      "lightness": "medium"
+    },
+    "#744f37": {
+      "zh": "棕色",
+      "en": "Brown",
+      "family": "brown",
+      "lightness": "dark"
+    },
+    "#363c41": {
+      "zh": "深灰色",
+      "en": "Charcoal",
+      "family": "grey",
+      "lightness": "dark"
+    },
+    "#111827": {
+      "zh": "近黑色",
+      "en": "Near black",
+      "family": "black",
+      "lightness": "dark"
+    },
+    "#465b70": {
+      "zh": "灰蓝色",
+      "en": "Slate blue",
+      "family": "blue",
+      "lightness": "medium"
+    },
+    "#243b55": {
+      "zh": "藏蓝色",
+      "en": "Navy",
+      "family": "blue",
+      "lightness": "dark"
+    },
+    "#718575": {
+      "zh": "鼠尾草绿",
+      "en": "Sage green",
+      "family": "green",
+      "lightness": "medium"
+    },
+    "#3e5143": {
+      "zh": "深绿色",
+      "en": "Dark green",
+      "family": "green",
+      "lightness": "dark"
+    },
+    "#803e47": {
+      "zh": "酒红色",
+      "en": "Burgundy",
+      "family": "red",
+      "lightness": "dark"
+    },
+    "#aeb4bb": {
+      "zh": "浅灰色",
+      "en": "Light grey",
+      "family": "grey",
+      "lightness": "light"
+    },
+    "#b5ccd4": {
+      "zh": "浅蓝色",
+      "en": "Light blue",
+      "family": "blue",
+      "lightness": "light"
+    },
+    "#d7b8b1": {
+      "zh": "浅粉色",
+      "en": "Dusty pink",
+      "family": "pink",
+      "lightness": "light"
+    },
+    "#1b6b5a": {
+      "zh": "深青绿色",
+      "en": "Deep teal",
+      "family": "green",
+      "lightness": "dark"
+    },
+    "#3056a0": {
+      "zh": "宝蓝色",
+      "en": "Royal blue",
+      "family": "blue",
+      "lightness": "medium"
+    },
+    "#70558b": {
+      "zh": "灰紫色",
+      "en": "Muted violet",
+      "family": "purple",
+      "lightness": "medium"
+    },
+    "#c7773a": {
+      "zh": "陶土橙",
+      "en": "Terracotta",
+      "family": "orange",
+      "lightness": "medium"
+    },
+    "#b89a3d": {
+      "zh": "芥末黄",
+      "en": "Mustard",
+      "family": "yellow",
+      "lightness": "medium"
+    },
+    "#b54040": {
+      "zh": "砖红色",
+      "en": "Brick red",
+      "family": "red",
+      "lightness": "medium"
+    },
+    "#e8d9a4": {
+      "zh": "浅杏黄色",
+      "en": "Pale yellow",
+      "family": "yellow",
+      "lightness": "light"
+    }
+  }
+}

@@ -1,0 +1,19 @@
+# Build this repository's custom features instead of pulling upstream images.
+# docker compose -f docker-compose.yml -f docker-compose.source.yml up -d --build
+services:
+  backend:
+    image: wardrowbe-personal-backend:local
+    build:
+      context: ./backend
+  worker:
+    image: wardrowbe-personal-backend:local
+    build:
+      context: ./backend
+  image-worker:
+    image: wardrowbe-personal-backend:local
+    build:
+      context: ./backend
+  frontend:
+    image: wardrowbe-personal-frontend:local
+    build:
+      context: ./frontend
