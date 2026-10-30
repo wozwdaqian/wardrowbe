@@ -2,6 +2,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { api } from "@/lib/api";
+import { queryKeys } from "@/lib/hooks/query-keys";
 import {
   BodyStyleReport,
   OutfitFeedback as Feedback,
@@ -29,7 +30,7 @@ export function OutfitFeedback({
       ),
     onSuccess: (feedback) =>
       queryClient.setQueryData<BodyStyleReport>(
-        ["body-style-report", report.id],
+        queryKeys.bodyStyling.report(report.id),
         (old) => (old ? { ...old, feedback } : old),
       ),
   });

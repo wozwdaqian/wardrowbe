@@ -14,6 +14,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
+import { queryKeys } from "@/lib/hooks/query-keys";
 import {
   useUserProfile,
   useUpdateUserProfile,
@@ -105,14 +106,14 @@ export default function BodyStylingPage() {
   const [error, setError] = useState("");
   const active = !!profile;
   const status = useQuery({
-    queryKey: ["body-style-status"],
+    queryKey: queryKeys.bodyStyling.status,
     queryFn: () => api.get<AIStatus>("/body-styling/status"),
     enabled: active,
     staleTime: 30_000,
     meta: { toastsOwnErrors: true },
   });
   const history = useQuery({
-    queryKey: ["body-style-history", offset],
+    queryKey: queryKeys.bodyStyling.history.page(offset),
     queryFn: () =>
       api.get<BodyStyleHistory>("/body-styling/recommendations", {
         params: { limit: "10", offset: String(offset) },
@@ -121,7 +122,7 @@ export default function BodyStylingPage() {
     meta: { toastsOwnErrors: true },
   });
   const detail = useQuery({
-    queryKey: ["body-style-report", selectedId],
+    queryKey: queryKeys.bodyStyling.report(selectedId),
     queryFn: () =>
       api.get<BodyStyleReport>("/body-styling/recommendations/" + selectedId),
     enabled: active && !!selectedId,
@@ -292,10 +293,10 @@ export default function BodyStylingPage() {
         { signal: controller.signal },
       );
       if (!mounted.current || controller.signal.aborted) return;
-      queryClient.setQueryData(["body-style-report", report.id], report);
+      queryClient.setQueryData(queryKeys.bodyStyling.report(report.id), report);
       openReport(report.id);
       setOffset(0);
-      await queryClient.invalidateQueries({ queryKey: ["body-style-history"] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.bodyStyling.history.all });
     } catch (err) {
       if (!controller.signal.aborted) handleError(err);
     } finally {

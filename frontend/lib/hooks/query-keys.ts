@@ -16,6 +16,7 @@ const PAIRINGS = ['pairings'] as const;
 const ITEM = ['item'] as const;
 const WEAR_STATS = ['wear-stats'] as const;
 const WEAR_HISTORY = ['wear-history'] as const;
+const BODY_STYLE_HISTORY = ['body-style-history'] as const;
 
 export const queryKeys = {
   authConfig: ['auth-config'] as const,
@@ -25,6 +26,14 @@ export const queryKeys = {
   weather: ['weather'] as const,
   preferences: ['preferences'] as const,
   family: ['family'] as const,
+  bodyStyling: {
+    status: ['body-style-status'] as const,
+    history: {
+      all: BODY_STYLE_HISTORY,
+      page: (offset: number) => [...BODY_STYLE_HISTORY, offset] as const,
+    },
+    report: (reportId: string | null) => ['body-style-report', reportId] as const,
+  },
 
   items: {
     all: ITEMS,
