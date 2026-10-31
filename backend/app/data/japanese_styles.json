@@ -1,0 +1,673 @@
+{
+  "styles": [
+    {
+      "id": "cityboy",
+      "base_style": "street",
+      "name": {"zh": "Cityboy 城市男孩", "en": "City Boy", "ja": "シティボーイ"},
+      "tagline": {"zh": "宽松叠穿、大地色、不刻意", "en": "Loose layers, earth tones, effortless"},
+      "description": {
+        "zh": "源自日本杂志《POPEYE》，把美式学院、工装、户外和运动单品混在一起穿。廓形宽松但不邋遢，靠叠穿和大地色出层次，看起来像随手搭的，其实每层都考虑过。",
+        "en": "Born in the Japanese magazine POPEYE, it mixes American prep, workwear, outdoor and sports pieces. Loose but not sloppy: layers and earth tones do the work, so it looks thrown together while every layer is chosen."
+      },
+      "keywords": {"zh": ["宽松", "叠穿", "大地色", "阔腿裤", "无 logo"], "en": ["relaxed", "layered", "earth tones", "wide trousers", "no logos"]},
+      "tips": {
+        "zh": ["先从一件宽松衬衫当外套开始，里面配白 T", "裤子选直筒或微阔，裤长到鞋面不堆积", "全身控制在三个颜色以内，以卡其、藏青、军绿为主"],
+        "en": ["Start with a loose shirt worn open over a white tee", "Pick straight or slightly wide trousers that just reach the shoe", "Keep to three colours, mostly khaki, navy and olive"]
+      },
+      "pitfalls": {
+        "zh": ["整身都大一号会显得邋遢，宽松要有一处收住（如露出脚踝或袖口卷起）", "大 logo 和亮色会破坏低调的感觉"],
+        "en": ["Oversizing everything looks sloppy; anchor it somewhere, such as a cropped ankle or rolled cuffs", "Big logos and loud colours break the low-key feel"]
+      },
+      "search": {"zh": ["cityboy 穿搭", "日系宽松叠穿 男"], "ja": ["シティボーイ コーデ メンズ"]},
+      "brands": ["UNIQLO U", "BEAMS", "URBAN RESEARCH", "Graphpaper", "nanamica"],
+      "starter": [
+        {"slot": "top", "kind": "shirt", "color": "#b5ccd4", "fit": "relaxed"},
+        {"slot": "top", "kind": "tshirt", "color": "#ffffff", "fit": "relaxed"},
+        {"slot": "outerwear", "kind": "overshirt", "color": "#d3be97", "fit": "relaxed"},
+        {"slot": "bottom", "kind": "chinos", "color": "#243b55", "fit": "wide"},
+        {"slot": "shoes", "kind": "sneakers", "color": "#ffffff"},
+        {"slot": "accessory", "kind": "cap", "color": "#243b55"}
+      ],
+      "looks": [
+        {
+          "title": {"zh": "衬衫当外套的松弛叠穿", "en": "Shirt worn open as a layer"},
+          "tags": {"zh": ["宽松叠穿", "燕麦色", "阔腿裤"], "en": ["loose layers", "oatmeal", "wide trousers"]},
+          "garments": [
+            {"slot": "top", "kind": "tshirt", "color": "#ffffff", "fit": "relaxed"},
+            {"slot": "outerwear", "kind": "overshirt", "color": "#d3be97", "fit": "relaxed", "length": "long"},
+            {"slot": "bottom", "kind": "chinos", "color": "#243b55", "fit": "wide"},
+            {"slot": "shoes", "kind": "sneakers", "color": "#ffffff"},
+            {"slot": "accessory", "kind": "cap", "color": "#243b55"}
+          ]
+        },
+        {
+          "title": {"zh": "条纹 T 恤加宽松卫衣", "en": "Striped tee under a loose sweatshirt"},
+          "tags": {"zh": ["条纹", "灰蓝", "乐福鞋混搭"], "en": ["stripes", "grey-blue", "loafers mixed in"]},
+          "garments": [
+            {"slot": "top", "kind": "tshirt", "color": "#efe8dd", "fit": "relaxed", "pattern": "stripe"},
+            {"slot": "top", "kind": "sweatshirt", "color": "#465b70", "fit": "relaxed"},
+            {"slot": "bottom", "kind": "trousers", "color": "#d3be97", "fit": "wide"},
+            {"slot": "shoes", "kind": "loafers", "color": "#744f37"},
+            {"slot": "accessory", "kind": "bag", "color": "#3e5143"}
+          ]
+        },
+        {
+          "title": {"zh": "军绿夹克配浅色阔腿裤", "en": "Olive jacket with pale wide trousers"},
+          "tags": {"zh": ["军绿", "浅蓝衬衫", "上深下浅"], "en": ["olive", "pale blue shirt", "dark over light"]},
+          "garments": [
+            {"slot": "top", "kind": "shirt", "color": "#b5ccd4", "fit": "relaxed"},
+            {"slot": "outerwear", "kind": "jacket", "color": "#3e5143", "fit": "relaxed"},
+            {"slot": "bottom", "kind": "chinos", "color": "#efe8dd", "fit": "wide"},
+            {"slot": "shoes", "kind": "sneakers", "color": "#111827"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "amekaji",
+      "base_style": "street",
+      "name": {"zh": "阿美咔叽", "en": "Amekaji", "ja": "アメカジ"},
+      "tagline": {"zh": "日本人改良的美式复古休闲", "en": "Japan's take on vintage American casual"},
+      "description": {
+        "zh": "アメカジ是 American Casual 的日式说法：以五六十年代美国人的日常穿着为蓝本，牛仔、格子衬衫、卫衣、工装靴是主角。质感偏粗犷，越穿越有味道。",
+        "en": "Amekaji is the Japanese shorthand for American Casual: everyday 1950s–60s American clothing, built on denim, flannel, sweatshirts and work boots. Rugged fabrics that age well."
+      },
+      "keywords": {"zh": ["牛仔", "格子衬衫", "卫衣", "工装靴", "藏青卡其棕"], "en": ["denim", "flannel", "sweatshirts", "work boots", "navy, khaki, brown"]},
+      "tips": {
+        "zh": ["一条深蓝直筒牛仔裤是核心，选原色或少洗水", "格子衬衫可以当外套敞开穿", "鞋子换成棕色皮靴，风格立刻成立"],
+        "en": ["A dark straight-leg pair of jeans is the core; choose raw or lightly washed", "Wear a flannel shirt open as a layer", "Brown leather boots make the look instantly"]
+      },
+      "pitfalls": {
+        "zh": ["上下都是牛仔且颜色相同会显得笨重，深浅要拉开", "过多徽章和破洞会偏向街头"],
+        "en": ["Matching denim top and bottom looks heavy; vary the shade", "Too many patches and rips tip it into streetwear"]
+      },
+      "search": {"zh": ["阿美咔叽 穿搭", "美式复古 男 牛仔"], "ja": ["アメカジ コーデ メンズ"]},
+      "brands": ["Levi's", "Champion", "L.L.Bean", "orSlow", "Red Wing"],
+      "starter": [
+        {"slot": "bottom", "kind": "jeans", "color": "#243b55", "fit": "regular"},
+        {"slot": "top", "kind": "shirt", "color": "#803e47", "pattern": "check"},
+        {"slot": "top", "kind": "sweatshirt", "color": "#aeb4bb"},
+        {"slot": "top", "kind": "tshirt", "color": "#efe8dd"},
+        {"slot": "shoes", "kind": "boots", "color": "#744f37"},
+        {"slot": "accessory", "kind": "belt", "color": "#744f37"}
+      ],
+      "looks": [
+        {
+          "title": {"zh": "格子衬衫、原色牛仔和皮靴", "en": "Flannel, raw denim and boots"},
+          "tags": {"zh": ["格纹", "深蓝牛仔", "棕色皮靴"], "en": ["check", "dark denim", "brown boots"]},
+          "garments": [
+            {"slot": "top", "kind": "shirt", "color": "#803e47", "pattern": "check"},
+            {"slot": "bottom", "kind": "jeans", "color": "#243b55"},
+            {"slot": "shoes", "kind": "boots", "color": "#744f37"},
+            {"slot": "accessory", "kind": "belt", "color": "#744f37"}
+          ]
+        },
+        {
+          "title": {"zh": "灰卫衣配牛仔和小白鞋", "en": "Grey sweatshirt, jeans and white sneakers"},
+          "tags": {"zh": ["灰卫衣", "军绿夹克", "经典美式"], "en": ["grey sweatshirt", "olive jacket", "classic American"]},
+          "garments": [
+            {"slot": "top", "kind": "tshirt", "color": "#ffffff"},
+            {"slot": "top", "kind": "sweatshirt", "color": "#aeb4bb", "fit": "relaxed"},
+            {"slot": "outerwear", "kind": "jacket", "color": "#3e5143"},
+            {"slot": "bottom", "kind": "jeans", "color": "#243b55"},
+            {"slot": "shoes", "kind": "sneakers", "color": "#ffffff"}
+          ]
+        },
+        {
+          "title": {"zh": "灰蓝夹克配卡其裤", "en": "Grey-blue jacket with khakis"},
+          "tags": {"zh": ["卡其裤", "灰蓝夹克", "皮靴"], "en": ["khakis", "grey-blue jacket", "boots"]},
+          "garments": [
+            {"slot": "top", "kind": "tshirt", "color": "#efe8dd"},
+            {"slot": "outerwear", "kind": "jacket", "color": "#465b70"},
+            {"slot": "bottom", "kind": "chinos", "color": "#d3be97"},
+            {"slot": "shoes", "kind": "boots", "color": "#744f37"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "workwear",
+      "base_style": "street",
+      "name": {"zh": "日式工装 · 军装", "en": "Japanese workwear & military", "ja": "ワーク・ミリタリー"},
+      "tagline": {"zh": "实用口袋、硬挺面料、军绿卡其", "en": "Utility pockets, sturdy fabric, olive and khaki"},
+      "description": {
+        "zh": "来自工人和军队的服装：多口袋工装裤、帆布工装夹克、军装衬衫。面料厚实耐穿，颜色以军绿、卡其、黑为主，整体硬朗、实用，对身材很宽容。",
+        "en": "Clothes from workers and the military: cargo trousers, canvas work jackets, field shirts. Tough fabrics in olive, khaki and black; rugged, practical and forgiving on most builds."
+      },
+      "keywords": {"zh": ["工装裤", "帆布夹克", "军绿", "多口袋", "硬朗"], "en": ["cargo trousers", "canvas jacket", "olive", "pockets", "rugged"]},
+      "tips": {
+        "zh": ["工装裤选直筒或微阔，口袋不要太多", "上身用简单的白 T 或黑 T 中和", "鞋子用黑色或棕色靴子最稳"],
+        "en": ["Choose straight or slightly wide cargos with modest pockets", "Balance them with a plain white or black tee", "Black or brown boots are the safest shoes"]
+      },
+      "pitfalls": {
+        "zh": ["全身都是功能细节会像制服，留一件干净的基础款", "过于紧身的工装失去了实用感"],
+        "en": ["All-over utility details read as a uniform; keep one clean basic", "Skinny workwear loses its practical feel"]
+      },
+      "search": {"zh": ["日系工装 穿搭 男", "军装风 男生"], "ja": ["ワークコーデ メンズ", "ミリタリー コーデ メンズ"]},
+      "brands": ["Dickies", "Carhartt WIP", "orSlow", "Buzz Rickson's", "Engineered Garments"],
+      "starter": [
+        {"slot": "bottom", "kind": "cargo_pants", "color": "#3e5143", "fit": "wide"},
+        {"slot": "outerwear", "kind": "jacket", "color": "#b69b79"},
+        {"slot": "top", "kind": "tshirt", "color": "#ffffff"},
+        {"slot": "top", "kind": "shirt", "color": "#3e5143", "fit": "relaxed"},
+        {"slot": "shoes", "kind": "boots", "color": "#111827"},
+        {"slot": "accessory", "kind": "cap", "color": "#3e5143"}
+      ],
+      "looks": [
+        {
+          "title": {"zh": "驼色工装夹克配军绿工装裤", "en": "Camel work jacket with olive cargos"},
+          "tags": {"zh": ["工装夹克", "工装裤", "黑靴"], "en": ["work jacket", "cargo trousers", "black boots"]},
+          "garments": [
+            {"slot": "top", "kind": "tshirt", "color": "#ffffff"},
+            {"slot": "outerwear", "kind": "jacket", "color": "#b69b79", "fit": "relaxed"},
+            {"slot": "bottom", "kind": "cargo_pants", "color": "#3e5143", "fit": "wide"},
+            {"slot": "shoes", "kind": "boots", "color": "#111827"}
+          ]
+        },
+        {
+          "title": {"zh": "军装衬衫配卡其工装裤", "en": "Field shirt with khaki cargos"},
+          "tags": {"zh": ["军绿衬衫", "卡其", "棒球帽"], "en": ["olive shirt", "khaki", "cap"]},
+          "garments": [
+            {"slot": "top", "kind": "shirt", "color": "#3e5143", "fit": "relaxed"},
+            {"slot": "bottom", "kind": "cargo_pants", "color": "#d3be97", "fit": "wide"},
+            {"slot": "shoes", "kind": "sneakers", "color": "#ffffff"},
+            {"slot": "accessory", "kind": "cap", "color": "#3e5143"}
+          ]
+        },
+        {
+          "title": {"zh": "鼠尾草绿衬衫夹克配黑工装裤", "en": "Sage overshirt with black work trousers"},
+          "tags": {"zh": ["衬衫夹克", "黑色", "宽裤"], "en": ["overshirt", "black", "wide trousers"]},
+          "garments": [
+            {"slot": "top", "kind": "tshirt", "color": "#363c41"},
+            {"slot": "outerwear", "kind": "overshirt", "color": "#718575", "fit": "relaxed"},
+            {"slot": "bottom", "kind": "trousers", "color": "#111827", "fit": "wide"},
+            {"slot": "shoes", "kind": "boots", "color": "#744f37"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "yamakei",
+      "base_style": "sporty",
+      "name": {"zh": "山系 · 户外", "en": "Yamakei outdoor", "ja": "山系・アウトドア"},
+      "tagline": {"zh": "把登山装备穿进城市", "en": "Mountain gear worn in the city"},
+      "description": {
+        "zh": "山系（やまけい）把登山露营的装备日常化：抓绒、冲锋衣、登山裤、越野鞋。重视功能和舒适，配色多为大地色，偶尔用一件亮色外套做撞色。",
+        "en": "Yamakei brings hiking and camping gear into daily life: fleece, shell jackets, trail trousers and trail shoes. Function and comfort first, mostly earth tones, sometimes one bright jacket as a colour block."
+      },
+      "keywords": {"zh": ["抓绒", "冲锋衣", "越野鞋", "大地色", "撞色"], "en": ["fleece", "shell jacket", "trail shoes", "earth tones", "colour blocking"]},
+      "tips": {
+        "zh": ["一件燕麦色或棕色抓绒外套是最好的入门单品", "下装选有弹力的直筒裤或工装裤", "亮色只放在外套上，其余保持大地色"],
+        "en": ["An oatmeal or brown fleece is the best first piece", "Pair stretchy straight trousers or cargos", "Keep bright colour to the jacket; everything else earthy"]
+      },
+      "pitfalls": {
+        "zh": ["从头到脚都是专业装备会像真去爬山，混入一件城市单品", "多个亮色同时出现会显乱"],
+        "en": ["Head-to-toe technical gear looks like an actual hike; mix in one city piece", "Several bright colours at once look busy"]
+      },
+      "search": {"zh": ["山系穿搭 男", "gorpcore 男生"], "ja": ["山系 コーデ メンズ", "アウトドアコーデ メンズ"]},
+      "brands": ["and wander", "snow peak", "THE NORTH FACE", "Patagonia", "Goldwin"],
+      "starter": [
+        {"slot": "outerwear", "kind": "fleece", "color": "#d3be97", "fit": "relaxed"},
+        {"slot": "outerwear", "kind": "jacket", "color": "#c7773a", "fit": "relaxed"},
+        {"slot": "bottom", "kind": "cargo_pants", "color": "#3e5143"},
+        {"slot": "top", "kind": "tshirt", "color": "#efe8dd"},
+        {"slot": "shoes", "kind": "sneakers", "color": "#363c41"},
+        {"slot": "accessory", "kind": "bag", "color": "#111827"}
+      ],
+      "looks": [
+        {
+          "title": {"zh": "燕麦色抓绒配军绿工装裤", "en": "Oatmeal fleece with olive cargos"},
+          "tags": {"zh": ["抓绒", "工装裤", "越野鞋"], "en": ["fleece", "cargo trousers", "trail shoes"]},
+          "garments": [
+            {"slot": "top", "kind": "tshirt", "color": "#efe8dd"},
+            {"slot": "outerwear", "kind": "fleece", "color": "#d3be97", "fit": "relaxed"},
+            {"slot": "bottom", "kind": "cargo_pants", "color": "#3e5143"},
+            {"slot": "shoes", "kind": "sneakers", "color": "#363c41"}
+          ]
+        },
+        {
+          "title": {"zh": "陶土橙冲锋衣撞色", "en": "Terracotta shell as the colour block"},
+          "tags": {"zh": ["冲锋衣", "撞色", "机能包"], "en": ["shell jacket", "colour block", "utility bag"]},
+          "garments": [
+            {"slot": "top", "kind": "tshirt", "color": "#ffffff"},
+            {"slot": "outerwear", "kind": "jacket", "color": "#c7773a", "fit": "relaxed"},
+            {"slot": "bottom", "kind": "trousers", "color": "#363c41"},
+            {"slot": "shoes", "kind": "sneakers", "color": "#718575"},
+            {"slot": "accessory", "kind": "bag", "color": "#111827"}
+          ]
+        },
+        {
+          "title": {"zh": "连帽卫衣配户外短裤", "en": "Hoodie with outdoor shorts"},
+          "tags": {"zh": ["连帽卫衣", "短裤", "露营感"], "en": ["hoodie", "shorts", "camp feel"]},
+          "garments": [
+            {"slot": "top", "kind": "tshirt", "color": "#ffffff"},
+            {"slot": "top", "kind": "hoodie", "color": "#718575", "fit": "relaxed"},
+            {"slot": "bottom", "kind": "shorts", "color": "#363c41"},
+            {"slot": "shoes", "kind": "sneakers", "color": "#111827"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vintage",
+      "base_style": "street",
+      "name": {"zh": "古着复古", "en": "Vintage (furugi)", "ja": "古着・ヴィンテージ"},
+      "tagline": {"zh": "带时代感的旧衣混搭", "en": "Pre-loved pieces with a sense of era"},
+      "description": {
+        "zh": "古着就是二手旧衣。古着风享受衣服的年代感和独一无二：复古印花衬衫、褪色牛仔、芥末黄针织。颜色偏旧、偏暖，版型常常宽一些。",
+        "en": "Furugi means second-hand clothing. The style enjoys each piece's era and uniqueness: retro print shirts, faded denim, mustard knitwear. Warm, slightly faded colours and roomier cuts."
+      },
+      "keywords": {"zh": ["复古", "褪色", "芥末黄", "波点", "宽版"], "en": ["retro", "faded", "mustard", "polka dot", "roomy"]},
+      "tips": {
+        "zh": ["先买一件复古色针织或印花衬衫，其他保持基础款", "去二手店时先看面料和做工，再看尺码", "一身只放一件主角单品"],
+        "en": ["Start with one retro-coloured knit or print shirt and keep the rest basic", "In thrift shops check fabric and make before size", "Let only one piece be the star"]
+      },
+      "pitfalls": {
+        "zh": ["全身都是复古会像戏服", "旧衣要注意清洁和气味，状态差的别买"],
+        "en": ["Head-to-toe vintage looks like a costume", "Mind cleanliness and smell; skip pieces in poor condition"]
+      },
+      "search": {"zh": ["古着穿搭 男", "日系复古 男生"], "ja": ["古着 コーデ メンズ"]},
+      "brands": ["二手古着店 / thrift shops", "Levi's Vintage Clothing", "KAPITAL", "Needles"],
+      "starter": [
+        {"slot": "top", "kind": "knit", "color": "#b89a3d"},
+        {"slot": "top", "kind": "shirt", "color": "#e8d9a4", "pattern": "dot", "fit": "relaxed"},
+        {"slot": "bottom", "kind": "jeans", "color": "#465b70", "fit": "wide"},
+        {"slot": "bottom", "kind": "trousers", "color": "#744f37", "fit": "wide"},
+        {"slot": "shoes", "kind": "loafers", "color": "#744f37"}
+      ],
+      "looks": [
+        {
+          "title": {"zh": "芥末黄针织配褪色牛仔", "en": "Mustard knit with faded denim"},
+          "tags": {"zh": ["芥末黄", "褪色牛仔", "乐福鞋"], "en": ["mustard", "faded denim", "loafers"]},
+          "garments": [
+            {"slot": "top", "kind": "shirt", "color": "#efe8dd"},
+            {"slot": "top", "kind": "knit", "color": "#b89a3d", "fit": "relaxed"},
+            {"slot": "bottom", "kind": "jeans", "color": "#465b70", "fit": "wide"},
+            {"slot": "shoes", "kind": "loafers", "color": "#744f37"}
+          ]
+        },
+        {
+          "title": {"zh": "酒红 T 恤配棕色夹克", "en": "Burgundy tee with a brown jacket"},
+          "tags": {"zh": ["酒红", "棕色", "七十年代感"], "en": ["burgundy", "brown", "seventies feel"]},
+          "garments": [
+            {"slot": "top", "kind": "tshirt", "color": "#803e47", "fit": "relaxed"},
+            {"slot": "outerwear", "kind": "jacket", "color": "#744f37"},
+            {"slot": "bottom", "kind": "chinos", "color": "#b69b79", "fit": "wide"},
+            {"slot": "shoes", "kind": "boots", "color": "#111827"}
+          ]
+        },
+        {
+          "title": {"zh": "波点衬衫配棕色宽裤", "en": "Polka-dot shirt with brown wide trousers"},
+          "tags": {"zh": ["波点", "杏黄", "宽裤"], "en": ["polka dot", "apricot", "wide trousers"]},
+          "garments": [
+            {"slot": "top", "kind": "shirt", "color": "#e8d9a4", "fit": "relaxed", "pattern": "dot"},
+            {"slot": "bottom", "kind": "trousers", "color": "#744f37", "fit": "wide"},
+            {"slot": "shoes", "kind": "loafers", "color": "#111827"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "natural",
+      "base_style": "minimal",
+      "name": {"zh": "文艺森系 · 无印风", "en": "Natural (Mori, Muji-like)", "ja": "ナチュラル系"},
+      "tagline": {"zh": "自然面料、柔和配色、松弛舒服", "en": "Natural fabrics, soft colours, easy comfort"},
+      "description": {
+        "zh": "日系里最「安静」的一支：棉麻面料、米白燕麦和鼠尾草绿，宽松的衬衫和阔腿裤，配帆布鞋或乐福鞋。像无印良品的店里走出来的人，舒服、干净、有点文艺。",
+        "en": "The quietest branch of Japanese style: cotton and linen in off-white, oatmeal and sage, loose shirts and wide trousers with canvas shoes or loafers. Comfortable, clean and a little bookish, like someone walking out of MUJI."
+      },
+      "keywords": {"zh": ["棉麻", "米白", "鼠尾草绿", "宽松", "文艺"], "en": ["cotton & linen", "off-white", "sage", "relaxed", "bookish"]},
+      "tips": {
+        "zh": ["先备米白、燕麦、浅灰三个颜色的基础款", "选有自然褶皱的棉麻衬衫，不必熨得笔挺", "配一副圆框眼镜或帆布包就很有感觉"],
+        "en": ["Start with basics in off-white, oatmeal and light grey", "Choose cotton-linen shirts that may crease naturally", "Round glasses or a canvas tote finish the mood"]
+      },
+      "pitfalls": {
+        "zh": ["全身浅色且都很宽松容易显得没精神，加一处深色", "皱得太厉害会显得不整洁"],
+        "en": ["All pale and all loose can look washed out; add one darker piece", "Too many creases read as untidy"]
+      },
+      "search": {"zh": ["日系文艺穿搭 男", "无印风穿搭 男", "森系男生"], "ja": ["ナチュラル系 コーデ メンズ"]},
+      "brands": ["MUJI 无印良品", "nest Robe", "YAECA", "MHL."],
+      "starter": [
+        {"slot": "top", "kind": "shirt", "color": "#efe8dd", "fit": "relaxed"},
+        {"slot": "top", "kind": "cardigan", "color": "#718575", "fit": "relaxed"},
+        {"slot": "bottom", "kind": "trousers", "color": "#d3be97", "fit": "wide"},
+        {"slot": "bottom", "kind": "chinos", "color": "#efe8dd", "fit": "wide"},
+        {"slot": "shoes", "kind": "sneakers", "color": "#efe8dd"},
+        {"slot": "accessory", "kind": "glasses", "color": "#744f37"}
+      ],
+      "looks": [
+        {
+          "title": {"zh": "米白棉麻衬衫配燕麦阔腿裤", "en": "Off-white cotton-linen shirt, oatmeal wide trousers"},
+          "tags": {"zh": ["棉麻", "米白燕麦", "帆布包"], "en": ["cotton-linen", "off-white & oatmeal", "canvas tote"]},
+          "garments": [
+            {"slot": "top", "kind": "shirt", "color": "#efe8dd", "fit": "relaxed"},
+            {"slot": "bottom", "kind": "trousers", "color": "#d3be97", "fit": "wide"},
+            {"slot": "shoes", "kind": "sneakers", "color": "#ffffff"},
+            {"slot": "accessory", "kind": "bag", "color": "#d3be97"}
+          ]
+        },
+        {
+          "title": {"zh": "鼠尾草绿开衫配米白宽裤", "en": "Sage cardigan with off-white wide trousers"},
+          "tags": {"zh": ["开衫", "鼠尾草绿", "柔和"], "en": ["cardigan", "sage", "soft"]},
+          "garments": [
+            {"slot": "top", "kind": "tshirt", "color": "#ffffff"},
+            {"slot": "top", "kind": "cardigan", "color": "#718575", "fit": "relaxed"},
+            {"slot": "bottom", "kind": "trousers", "color": "#efe8dd", "fit": "wide"},
+            {"slot": "shoes", "kind": "loafers", "color": "#744f37"}
+          ]
+        },
+        {
+          "title": {"zh": "浅蓝条纹衬衫和圆框眼镜", "en": "Pale blue stripes and round glasses"},
+          "tags": {"zh": ["条纹衬衫", "圆框眼镜", "文艺"], "en": ["striped shirt", "round glasses", "bookish"]},
+          "garments": [
+            {"slot": "top", "kind": "shirt", "color": "#b5ccd4", "fit": "relaxed", "pattern": "stripe"},
+            {"slot": "bottom", "kind": "chinos", "color": "#efe8dd", "fit": "wide"},
+            {"slot": "shoes", "kind": "sneakers", "color": "#efe8dd"},
+            {"slot": "accessory", "kind": "glasses", "color": "#744f37"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "kireime",
+      "base_style": "smart_casual",
+      "name": {"zh": "きれいめ 清爽干净", "en": "Kireime (clean & neat)", "ja": "きれいめ系"},
+      "tagline": {"zh": "干净利落，第一印象分最高", "en": "Clean and sharp; the best first impression"},
+      "description": {
+        "zh": "きれいめ意为「整洁好看」：以衬衫、西裤、皮鞋为底，适度加入休闲单品。版型合身、颜色素净，上班、约会、见家长都不出错，是新手最稳的起点。",
+        "en": "Kireime means neat and pretty: shirts, tailored trousers and leather shoes with a touch of casual. Well-fitting and plain-coloured, it works for the office, dates and meeting parents; the safest place for a beginner to start."
+      },
+      "keywords": {"zh": ["合身", "衬衫", "西裤", "皮鞋", "素色"], "en": ["well-fitting", "shirt", "tailored trousers", "leather shoes", "plain colours"]},
+      "tips": {
+        "zh": ["先备一件合身白衬衫、一条深灰西裤、一双黑乐福", "所有单品先保证尺码合适，再考虑款式", "颜色以黑白灰藏青为主，最多加一个点缀色"],
+        "en": ["Start with a well-fitting white shirt, charcoal trousers and black loafers", "Get the size right before worrying about design", "Stick to black, white, grey and navy plus at most one accent"]
+      },
+      "pitfalls": {
+        "zh": ["全套太正式会像去上班面试，换一件针织或 Polo 放松一下", "过紧的修身会显拘束"],
+        "en": ["Fully formal looks like a job interview; swap in a knit or polo", "Too-tight slim fits look stiff"]
+      },
+      "search": {"zh": ["日系简约穿搭 男", "きれいめ 穿搭"], "ja": ["きれいめ コーデ メンズ"]},
+      "brands": ["UNIQLO", "nano・universe", "SHIPS", "UNITED ARROWS"],
+      "starter": [
+        {"slot": "top", "kind": "shirt", "color": "#ffffff", "fit": "slim"},
+        {"slot": "bottom", "kind": "trousers", "color": "#363c41"},
+        {"slot": "outerwear", "kind": "blazer", "color": "#243b55"},
+        {"slot": "top", "kind": "turtleneck", "color": "#111827"},
+        {"slot": "shoes", "kind": "loafers", "color": "#111827"},
+        {"slot": "accessory", "kind": "watch", "color": "#aeb4bb"}
+      ],
+      "looks": [
+        {
+          "title": {"zh": "白衬衫、藏青西装外套和深灰西裤", "en": "White shirt, navy blazer, charcoal trousers"},
+          "tags": {"zh": ["合身", "藏青", "乐福鞋"], "en": ["well-fitting", "navy", "loafers"]},
+          "garments": [
+            {"slot": "top", "kind": "shirt", "color": "#ffffff", "fit": "slim"},
+            {"slot": "outerwear", "kind": "blazer", "color": "#243b55"},
+            {"slot": "bottom", "kind": "trousers", "color": "#363c41"},
+            {"slot": "shoes", "kind": "loafers", "color": "#111827"}
+          ]
+        },
+        {
+          "title": {"zh": "黑高领配驼色长大衣", "en": "Black turtleneck under a camel coat"},
+          "tags": {"zh": ["高领", "驼色大衣", "浅灰西裤"], "en": ["turtleneck", "camel coat", "light grey trousers"]},
+          "garments": [
+            {"slot": "top", "kind": "turtleneck", "color": "#111827"},
+            {"slot": "outerwear", "kind": "coat", "color": "#b69b79", "length": "long"},
+            {"slot": "bottom", "kind": "trousers", "color": "#aeb4bb"},
+            {"slot": "shoes", "kind": "derbies", "color": "#111827"}
+          ]
+        },
+        {
+          "title": {"zh": "米白针织 Polo 配藏青西裤", "en": "Off-white knit polo with navy trousers"},
+          "tags": {"zh": ["针织 Polo", "藏青", "手表"], "en": ["knit polo", "navy", "watch"]},
+          "garments": [
+            {"slot": "top", "kind": "polo", "color": "#efe8dd"},
+            {"slot": "bottom", "kind": "trousers", "color": "#243b55"},
+            {"slot": "shoes", "kind": "loafers", "color": "#744f37"},
+            {"slot": "accessory", "kind": "watch", "color": "#aeb4bb"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ivy",
+      "base_style": "classic",
+      "name": {"zh": "日式常春藤 · 学院", "en": "Japanese Ivy & trad", "ja": "アイビー・トラッド"},
+      "tagline": {"zh": "牛津衬衫、针织背心、乐福鞋", "en": "Oxford shirts, knit vests, loafers"},
+      "description": {
+        "zh": "日本六十年代起就痴迷美国常春藤名校的穿法，并把它做得更精致：扣领牛津纺衬衫、卡其裤、针织背心、藏青西装外套、便士乐福鞋。斯文、有书卷气，又不死板。",
+        "en": "Japan has loved American Ivy League dress since the 1960s and refined it: button-down oxfords, chinos, knit vests, navy blazers and penny loafers. Polished and scholarly without being stiff."
+      },
+      "keywords": {"zh": ["牛津纺", "扣领", "针织背心", "卡其裤", "乐福鞋"], "en": ["oxford cloth", "button-down", "knit vest", "chinos", "loafers"]},
+      "tips": {
+        "zh": ["浅蓝牛津纺扣领衬衫和卡其裤是基本盘", "冬天在衬衫外加针织背心或毛衣", "鞋子选棕色或酒红乐福鞋"],
+        "en": ["A pale blue button-down oxford and chinos are the base", "Add a knit vest or sweater over the shirt in winter", "Brown or burgundy loafers"]
+      },
+      "pitfalls": {
+        "zh": ["领带、西装、皮鞋全上会过于正式，日常保留一处休闲", "裤子太长堆在鞋面会显得拖沓"],
+        "en": ["Tie, blazer and dress shoes all at once is too formal for daily wear", "Trousers pooling on the shoe look sloppy"]
+      },
+      "search": {"zh": ["日系学院风 男", "常春藤穿搭 男"], "ja": ["アイビー コーデ メンズ", "トラッド コーデ メンズ"]},
+      "brands": ["BEAMS PLUS", "J.PRESS", "Brooks Brothers", "Kamakura Shirts"],
+      "starter": [
+        {"slot": "top", "kind": "shirt", "color": "#b5ccd4"},
+        {"slot": "top", "kind": "vest", "color": "#803e47"},
+        {"slot": "bottom", "kind": "chinos", "color": "#d3be97"},
+        {"slot": "outerwear", "kind": "blazer", "color": "#243b55"},
+        {"slot": "shoes", "kind": "loafers", "color": "#744f37"},
+        {"slot": "accessory", "kind": "tie", "color": "#803e47", "pattern": "stripe"}
+      ],
+      "looks": [
+        {
+          "title": {"zh": "牛津纺衬衫加酒红针织背心", "en": "Oxford shirt with a burgundy knit vest"},
+          "tags": {"zh": ["牛津纺", "针织背心", "卡其裤"], "en": ["oxford", "knit vest", "chinos"]},
+          "garments": [
+            {"slot": "top", "kind": "shirt", "color": "#b5ccd4"},
+            {"slot": "top", "kind": "vest", "color": "#803e47"},
+            {"slot": "bottom", "kind": "chinos", "color": "#d3be97"},
+            {"slot": "shoes", "kind": "loafers", "color": "#744f37"}
+          ]
+        },
+        {
+          "title": {"zh": "藏青西装外套配条纹领带", "en": "Navy blazer with a striped tie"},
+          "tags": {"zh": ["藏青西装", "条纹领带", "灰色西裤"], "en": ["navy blazer", "striped tie", "grey trousers"]},
+          "garments": [
+            {"slot": "top", "kind": "shirt", "color": "#ffffff"},
+            {"slot": "outerwear", "kind": "blazer", "color": "#243b55"},
+            {"slot": "bottom", "kind": "trousers", "color": "#aeb4bb"},
+            {"slot": "shoes", "kind": "loafers", "color": "#803e47"},
+            {"slot": "accessory", "kind": "tie", "color": "#803e47", "pattern": "stripe"}
+          ]
+        },
+        {
+          "title": {"zh": "格纹衬衫外搭藏青毛衣", "en": "Check shirt under a navy sweater"},
+          "tags": {"zh": ["格纹", "藏青毛衣", "德比鞋"], "en": ["check", "navy sweater", "derbies"]},
+          "garments": [
+            {"slot": "top", "kind": "shirt", "color": "#efe8dd", "pattern": "check"},
+            {"slot": "top", "kind": "knit", "color": "#243b55"},
+            {"slot": "bottom", "kind": "chinos", "color": "#b69b79"},
+            {"slot": "shoes", "kind": "derbies", "color": "#744f37"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "normcore",
+      "base_style": "minimal",
+      "name": {"zh": "极简基础 · Normcore", "en": "Normcore basics", "ja": "ノームコア"},
+      "tagline": {"zh": "白 T 灰卫衣，普通到高级", "en": "White tees and grey sweats, plain on purpose"},
+      "description": {
+        "zh": "刻意穿得普通：白 T、灰卫衣、直筒裤、小白鞋。没有任何花哨的细节，靠干净、合身和好面料取胜。门槛最低，也最容易和其他风格混搭。",
+        "en": "Deliberately ordinary: white tees, grey sweatshirts, straight trousers, white sneakers. No flourishes; it wins on cleanliness, fit and good fabric. The lowest barrier to entry and the easiest to mix with other styles."
+      },
+      "keywords": {"zh": ["白 T", "灰卫衣", "直筒裤", "小白鞋", "黑白灰"], "en": ["white tee", "grey sweatshirt", "straight trousers", "white sneakers", "monochrome"]},
+      "tips": {
+        "zh": ["买三件好一点的白 T 和黑 T，比买十件便宜货强", "裤子选直筒，长度到脚踝", "保持衣服干净平整是这个风格的全部"],
+        "en": ["Three good white and black tees beat ten cheap ones", "Straight trousers ending at the ankle", "Keeping clothes clean and smooth is the whole style"]
+      },
+      "pitfalls": {
+        "zh": ["领口松垮、起球的旧 T 恤会让整个风格失败", "全身同一个颜色容易显得平淡，深浅要有变化"],
+        "en": ["Stretched collars and pilled tees ruin it", "One colour head to toe looks flat; vary light and dark"]
+      },
+      "search": {"zh": ["极简穿搭 男", "基础款穿搭 男生"], "ja": ["ノームコア コーデ メンズ"]},
+      "brands": ["UNIQLO", "GU", "MUJI 无印良品"],
+      "starter": [
+        {"slot": "top", "kind": "tshirt", "color": "#ffffff"},
+        {"slot": "top", "kind": "tshirt", "color": "#111827"},
+        {"slot": "top", "kind": "sweatshirt", "color": "#aeb4bb"},
+        {"slot": "bottom", "kind": "trousers", "color": "#363c41"},
+        {"slot": "bottom", "kind": "jeans", "color": "#243b55"},
+        {"slot": "shoes", "kind": "sneakers", "color": "#ffffff"}
+      ],
+      "looks": [
+        {
+          "title": {"zh": "白 T、深灰直筒裤、小白鞋", "en": "White tee, charcoal straight trousers, white sneakers"},
+          "tags": {"zh": ["白 T", "直筒裤", "极简"], "en": ["white tee", "straight trousers", "minimal"]},
+          "garments": [
+            {"slot": "top", "kind": "tshirt", "color": "#ffffff"},
+            {"slot": "bottom", "kind": "trousers", "color": "#363c41"},
+            {"slot": "shoes", "kind": "sneakers", "color": "#ffffff"}
+          ]
+        },
+        {
+          "title": {"zh": "浅灰卫衣配深蓝牛仔", "en": "Light grey sweatshirt with dark jeans"},
+          "tags": {"zh": ["灰卫衣", "牛仔", "日常"], "en": ["grey sweatshirt", "jeans", "everyday"]},
+          "garments": [
+            {"slot": "top", "kind": "sweatshirt", "color": "#aeb4bb"},
+            {"slot": "bottom", "kind": "jeans", "color": "#243b55"},
+            {"slot": "shoes", "kind": "sneakers", "color": "#ffffff"}
+          ]
+        },
+        {
+          "title": {"zh": "藏青毛衣配卡其裤", "en": "Navy sweater with khakis"},
+          "tags": {"zh": ["毛衣", "卡其", "低调"], "en": ["sweater", "khaki", "understated"]},
+          "garments": [
+            {"slot": "top", "kind": "knit", "color": "#243b55"},
+            {"slot": "bottom", "kind": "chinos", "color": "#d3be97"},
+            {"slot": "shoes", "kind": "sneakers", "color": "#363c41"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mode",
+      "base_style": "minimal",
+      "name": {"zh": "暗黑 Mode", "en": "Mode (dark avant-garde)", "ja": "モード系"},
+      "tagline": {"zh": "全黑、垂坠、廓形有态度", "en": "All black, draped, shapes with attitude"},
+      "description": {
+        "zh": "受山本耀司、川久保玲等日本设计师影响：以黑色为主，宽大垂坠的廓形、长款叠穿、不对称设计。气场强，偏艺术感，适合想穿出个性的人。",
+        "en": "Shaped by Japanese designers such as Yohji Yamamoto and Rei Kawakubo: mostly black, wide draped silhouettes, long layers and asymmetry. Strong, artistic and for people who want to stand apart."
+      },
+      "keywords": {"zh": ["全黑", "垂坠", "长款", "宽松", "设计感"], "en": ["all black", "drape", "long lengths", "oversized", "design-led"]},
+      "tips": {
+        "zh": ["先从黑色宽松衬衫和黑色阔腿裤开始", "用不同面料的黑（哑光、垂坠）做出层次", "鞋子选黑色德比鞋或靴子"],
+        "en": ["Start with a loose black shirt and black wide trousers", "Layer blacks of different textures (matte, draped)", "Black derbies or boots"]
+      },
+      "pitfalls": {
+        "zh": ["黑色褪色发灰会显得旧，洗护要注意", "身高较矮时长款要控制长度，避免被衣服吞掉"],
+        "en": ["Faded greyish black looks worn; wash carefully", "Shorter frames should limit length so the clothes do not swallow them"]
+      },
+      "search": {"zh": ["暗黑风穿搭 男", "山本耀司 风格 穿搭"], "ja": ["モード系 コーデ メンズ"]},
+      "brands": ["Yohji Yamamoto", "COMME des GARÇONS HOMME", "HOMME PLISSÉ ISSEY MIYAKE", "Y's"],
+      "starter": [
+        {"slot": "top", "kind": "shirt", "color": "#111827", "fit": "relaxed"},
+        {"slot": "bottom", "kind": "trousers", "color": "#111827", "fit": "wide"},
+        {"slot": "outerwear", "kind": "coat", "color": "#363c41", "fit": "relaxed"},
+        {"slot": "top", "kind": "turtleneck", "color": "#111827"},
+        {"slot": "shoes", "kind": "derbies", "color": "#111827"}
+      ],
+      "looks": [
+        {
+          "title": {"zh": "全黑宽松衬衫和阔腿裤", "en": "All-black loose shirt and wide trousers"},
+          "tags": {"zh": ["全黑", "长款衬衫", "阔腿"], "en": ["all black", "long shirt", "wide leg"]},
+          "garments": [
+            {"slot": "top", "kind": "shirt", "color": "#111827", "fit": "relaxed", "length": "long"},
+            {"slot": "bottom", "kind": "trousers", "color": "#111827", "fit": "wide"},
+            {"slot": "shoes", "kind": "derbies", "color": "#111827"}
+          ]
+        },
+        {
+          "title": {"zh": "深灰长大衣叠黑色", "en": "Long charcoal coat over black"},
+          "tags": {"zh": ["长大衣", "深灰叠黑", "靴子"], "en": ["long coat", "charcoal over black", "boots"]},
+          "garments": [
+            {"slot": "top", "kind": "tshirt", "color": "#111827", "length": "long"},
+            {"slot": "outerwear", "kind": "coat", "color": "#363c41", "fit": "relaxed", "length": "long"},
+            {"slot": "bottom", "kind": "trousers", "color": "#111827", "fit": "wide"},
+            {"slot": "shoes", "kind": "boots", "color": "#111827"}
+          ]
+        },
+        {
+          "title": {"zh": "黑高领配宽松黑西装", "en": "Black turtleneck under a loose black blazer"},
+          "tags": {"zh": ["高领", "宽松西装", "深灰阔腿"], "en": ["turtleneck", "loose blazer", "charcoal wide leg"]},
+          "garments": [
+            {"slot": "top", "kind": "turtleneck", "color": "#111827"},
+            {"slot": "outerwear", "kind": "blazer", "color": "#111827", "fit": "relaxed", "length": "long"},
+            {"slot": "bottom", "kind": "trousers", "color": "#363c41", "fit": "wide"},
+            {"slot": "shoes", "kind": "derbies", "color": "#111827"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ura_street",
+      "base_style": "street",
+      "name": {"zh": "日式街头 · 里原宿", "en": "Japanese street (Ura-Harajuku)", "ja": "ストリート系"},
+      "tagline": {"zh": "连帽卫衣、工装裤、球鞋和帽子", "en": "Hoodies, cargos, sneakers and caps"},
+      "description": {
+        "zh": "九十年代东京里原宿发源的街头风，受滑板和嘻哈影响：宽大的连帽卫衣、工装裤、显眼的球鞋和帽子。年轻、有态度，可以玩图案和颜色。",
+        "en": "Street style from 1990s Ura-Harajuku in Tokyo, shaped by skate and hip-hop: big hoodies, cargo trousers, statement sneakers and caps. Young and bold, with room for graphics and colour."
+      },
+      "keywords": {"zh": ["oversize", "连帽卫衣", "工装裤", "球鞋", "帽子"], "en": ["oversized", "hoodie", "cargo trousers", "sneakers", "caps"]},
+      "tips": {
+        "zh": ["上宽下宽时用帽子或鞋子做重点", "一双好球鞋是这个风格的门面", "黑灰打底，只用一个亮色"],
+        "en": ["When top and bottom are both wide, let the cap or shoes lead", "A good pair of sneakers is the face of the look", "Black and grey base with just one bright colour"]
+      },
+      "pitfalls": {
+        "zh": ["大 logo 和多个图案叠在一起会很乱", "尺码大太多会显得穿错衣服"],
+        "en": ["Big logos and several graphics together look chaotic", "Sizing up too far looks like wearing someone else's clothes"]
+      },
+      "search": {"zh": ["日系街头穿搭 男", "里原宿 风格"], "ja": ["ストリート系 コーデ メンズ"]},
+      "brands": ["NEIGHBORHOOD", "WTAPS", "A BATHING APE", "UNDERCOVER", "GU"],
+      "starter": [
+        {"slot": "top", "kind": "hoodie", "color": "#111827", "fit": "relaxed"},
+        {"slot": "bottom", "kind": "cargo_pants", "color": "#363c41", "fit": "wide"},
+        {"slot": "top", "kind": "tshirt", "color": "#ffffff", "fit": "relaxed"},
+        {"slot": "shoes", "kind": "sneakers", "color": "#ffffff"},
+        {"slot": "accessory", "kind": "cap", "color": "#111827"}
+      ],
+      "looks": [
+        {
+          "title": {"zh": "黑色连帽卫衣配深灰工装裤", "en": "Black hoodie with charcoal cargos"},
+          "tags": {"zh": ["连帽卫衣", "工装裤", "棒球帽"], "en": ["hoodie", "cargo trousers", "cap"]},
+          "garments": [
+            {"slot": "top", "kind": "hoodie", "color": "#111827", "fit": "relaxed"},
+            {"slot": "bottom", "kind": "cargo_pants", "color": "#363c41", "fit": "wide"},
+            {"slot": "shoes", "kind": "sneakers", "color": "#ffffff"},
+            {"slot": "accessory", "kind": "cap", "color": "#111827"}
+          ]
+        },
+        {
+          "title": {"zh": "宝蓝夹克和砖红球鞋", "en": "Royal blue jacket and brick-red sneakers"},
+          "tags": {"zh": ["宝蓝", "黑色宽牛仔", "亮色球鞋"], "en": ["royal blue", "wide black denim", "bright sneakers"]},
+          "garments": [
+            {"slot": "top", "kind": "tshirt", "color": "#ffffff", "fit": "relaxed", "length": "long"},
+            {"slot": "outerwear", "kind": "jacket", "color": "#3056a0", "fit": "relaxed"},
+            {"slot": "bottom", "kind": "jeans", "color": "#111827", "fit": "wide"},
+            {"slot": "shoes", "kind": "sneakers", "color": "#b54040"}
+          ]
+        },
+        {
+          "title": {"zh": "酒红连帽卫衣配短裤", "en": "Burgundy hoodie with shorts"},
+          "tags": {"zh": ["酒红", "短裤", "斜挎包"], "en": ["burgundy", "shorts", "cross-body bag"]},
+          "garments": [
+            {"slot": "top", "kind": "tshirt", "color": "#ffffff"},
+            {"slot": "top", "kind": "hoodie", "color": "#803e47", "fit": "relaxed"},
+            {"slot": "bottom", "kind": "shorts", "color": "#111827", "fit": "relaxed"},
+            {"slot": "shoes", "kind": "sneakers", "color": "#111827"},
+            {"slot": "accessory", "kind": "bag", "color": "#111827"}
+          ]
+        }
+      ]
+    }
+  ]
+}

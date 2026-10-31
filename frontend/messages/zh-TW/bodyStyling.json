@@ -174,7 +174,10 @@
     "down_jacket": "羽絨外套",
     "tie": "領帶",
     "watch": "手錶",
-    "glasses": "眼鏡"
+    "glasses": "眼鏡",
+    "hoodie": "連帽衛衣",
+    "cargo_pants": "工裝褲",
+    "fleece": "刷毛外套"
   },
   "fit": {
     "slim": "Slim",
@@ -303,5 +306,56 @@
     "toBuy": "衣櫥裡還沒有",
     "daysTitle": "每天怎麼穿",
     "open": "出差打包清單"
+  },
+  "styleExplore": {
+    "title": "風格探索",
+    "subtitle": "日系男裝有很多分支，憑直覺選，找到適合你的那一支。",
+    "entry": "風格探索",
+    "entryHint": "還不知道自己的風格？做個測試",
+    "intro": "接下來會給你看一組日系搭配。不用想太多，憑第一感覺選「喜歡」「一般」或「不喜歡」就好。",
+    "howRoundOne": "第一輪：每個日系分支各一套，共 11 套左右。",
+    "howRoundTwo": "第二輪：在你最喜歡的三個方向裡再各看兩套。",
+    "howResult": "最後告訴你的主風格、入門單品清單（會對照你的衣櫥）和可以拿去搜的關鍵字。",
+    "start": "開始測試",
+    "retake": "重新測試",
+    "back": "返回身材穿搭",
+    "current": "你現在的風格：{styles}",
+    "roundOne": "第一輪 · 憑第一感覺",
+    "roundTwo": "第二輪 · 細看你喜歡的方向",
+    "progress": "{current} / {total}",
+    "like": "喜歡",
+    "neutral": "一般",
+    "dislike": "不喜歡",
+    "previous": "上一套",
+    "calculating": "正在分析你的選擇…",
+    "resultTitle": "你的日系風格",
+    "unsure": "這次沒有特別心動的，新手可以先從這兩種最穩的風格開始",
+    "mainStyle": "主風格",
+    "secondStyle": "第二風格",
+    "likedColors": "你選中的搭配裡常出現：{colors}",
+    "bodyNote": {
+      "solid": "參考：日本的穿搭指南認為，工裝、山系、Cityboy、阿美咔嘰這類寬鬆廓形對身材更友善。喜歡才是第一位。",
+      "tall_slim": "參考：高瘦身形穿 きれいめ、暗黑 Mode、常春藤這類俐落或長版的風格很有優勢。喜歡才是第一位。"
+    },
+    "save": "設為我的風格",
+    "saved": "已設為你的風格",
+    "saveHint": "儲存後，今日穿搭、身材穿搭報告和穿搭助手都會按這個方向給建議，隨時可以重新測試。",
+    "report": "按這個風格生成報告",
+    "ask": "問助手怎麼入門",
+    "askPrompt": "我的風格測試結果是「{style}」。我是穿搭新手，該怎麼入門？先買哪幾件？",
+    "tips": "入門建議",
+    "pitfalls": "容易踩的坑",
+    "starter": "入門單品清單",
+    "starterHint": "已對照你的衣櫥",
+    "status": {
+      "owned": "已有",
+      "similar": "有類似的",
+      "missing": "還沒有"
+    },
+    "search": "拿去搜（點擊複製）",
+    "copy": "複製「{term}」",
+    "brands": "代表品牌",
+    "ranking": "各風格得分",
+    "error": "出了點問題，請重試。"
   }
 }

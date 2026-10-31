@@ -58,6 +58,9 @@ through the write tools. Rules:
   For a single garment the user wants to keep, call add_wardrobe_item with what you see. For a
   shop or product photo, call assess_purchase and base the advice on its result. If a photo is
   unclear or shows several garments, ask before adding anything.
+- styling_profile.preferred_styles holds the user's Japanese sub-styles from the style quiz (main
+  one first); follow that direction. When the user has none and is unsure of their style, suggest the
+  style explorer at /dashboard/body-styling/style.
 - Answer in {language}, briefly and concretely."""
 
 JSON_PROTOCOL = """Tools are not available natively here. To use one, reply with ONLY a JSON object

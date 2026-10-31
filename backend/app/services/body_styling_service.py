@@ -67,7 +67,8 @@ def body_facts(
         facts.extend(
             BodyFact(id=key, value=value, unit="self_report")
             for key, value in profile.model_dump(exclude_none=True).items()
-            if value
+            # The style direction steers the looks; it is not a fact about the body.
+            if value and key != "preferred_styles"
         )
     return facts
 
@@ -168,7 +169,7 @@ that a numerical ratio alone proves a body category or guarantees fit. Do not in
 refer to server fact IDs. State meaningful limitations for missing inseam, weight or shoulder information.
 Create exactly 3 distinct complete outfits, each with one top, bottom and shoes, optionally one outerwear
 and up to two different accessories. A second top is a layer: one base (tshirt/polo/shirt/turtleneck)
-under one mid layer (knit/sweatshirt/cardigan/vest); list the base first. A vest always needs a base.
+under one mid layer (knit/sweatshirt/hoodie/cardigan/vest); list the base first. A vest always needs a base.
 Each garment has a pattern (solid/stripe/check/herringbone/dot); shoes are solid and an outfit carries at
 most one bold pattern (stripe/check/dot). No wardrobe IDs, products, shopping links, HTML or SVG. Use the supplied schema's
 garment enums; bottom rise is required, other garments' rise is null. Colors must be six-digit hex.
@@ -186,6 +187,10 @@ For tops/outerwear, short/regular/long means waist/hip/below-hip length; for tro
 regular means full length, long means a longer break. Shorts are always short. Fit describes silhouette,
 not a clothing size. Use fit=regular and length=regular for shoes/accessories. Make season and occasion
 appropriate choices. Return only the JSON object matching the schema, no markdown.
+
+STYLE DIRECTION:
+When input.style_direction is present, it names the user's Japanese menswear sub-styles (main one
+first). Dress all three looks in that direction, using its keywords, while every rule above still wins.
 
 PERSONAL COLOR AND FABRIC CONTRACT:
 Use the optional self-reported styling_profile, including color preferences, fabric preferences and fit
@@ -247,7 +252,23 @@ def prepare_style(
         "contract_version": 3,
         "mode": mode,
     }
+    if profile.preferred_styles:
+        snapshot["style_direction"] = style_direction(profile.preferred_styles)
     return profile, facts, rules, snapshot
+
+
+def style_direction(style_ids: list[str]) -> list[dict]:
+    from app.services.style_explore import STYLES
+
+    return [
+        {
+            "id": style_id,
+            "name": STYLES[style_id]["name"]["en"],
+            "description": STYLES[style_id]["description"]["en"],
+            "keywords": STYLES[style_id]["keywords"]["en"],
+        }
+        for style_id in style_ids
+    ]
 
 
 async def save_style(

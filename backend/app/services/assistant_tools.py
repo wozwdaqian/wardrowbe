@@ -36,6 +36,7 @@ from app.schemas.item import ItemCreate
 from app.schemas.styling_profile import (
     CATALOG,
     PROFILE_CATALOGS,
+    STYLE_DATA,
     StylingProfile,
     styling_revision,
 )
@@ -65,6 +66,7 @@ from app.workers.queues import TAGGING_QUEUE
 from app.workers.settings import get_redis_settings
 
 Kind = Literal["read", "direct", "confirm"]
+STYLE_NAMES = {style["id"]: style["name"] for style in STYLE_DATA}
 MEASUREMENT_KEYS = (
     "height",
     "chest",
@@ -721,6 +723,9 @@ def profile_value(key: str, value, zh: bool) -> str:
     """Catalog codes ("wool") are shown by their names ("羊毛"), lists joined."""
     if value in (None, "", []):
         return "—"
+    if key == "preferred_styles":
+        names = [STYLE_NAMES.get(v, {}).get("zh" if zh else "en", v) for v in value]
+        return ("、" if zh else ", ").join(names)
     if key not in PROFILE_CATALOGS:
         return str(value)
     vocabulary = CATALOG[PROFILE_CATALOGS[key]]

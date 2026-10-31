@@ -85,11 +85,32 @@ function renderPreferenceDefaults(defaults) {
   return ['export const PREFERENCE_DEFAULTS = {', ...entries, '} as const;'];
 }
 
+// Only ids, base styles and names; descriptions and looks are served by the style quiz API.
+function renderJapaneseStyles({ styles }) {
+  const bases = styles.map(({ id, base_style: base }) => `  ${key(id)}: ${quote(base)},`);
+  const names = styles.map(
+    ({ id, name }) => `  ${key(id)}: { zh: ${quote(name.zh)}, en: ${quote(name.en)}, ja: ${quote(name.ja)} },`,
+  );
+  return [
+    `export const JAPANESE_STYLE_IDS = ${list(styles.map((s) => s.id))};`,
+    'export type JapaneseStyleId = (typeof JAPANESE_STYLE_IDS)[number];',
+    '',
+    'export const JAPANESE_STYLE_BASE: Record<JapaneseStyleId, string> = {',
+    ...bases,
+    '};',
+    '',
+    'export const JAPANESE_STYLE_NAMES: Record<JapaneseStyleId, { zh: string; en: string; ja: string }> = {',
+    ...names,
+    '};',
+  ];
+}
+
 const TARGETS = [
   { source: 'garment_vocabulary.json', output: 'garment-vocabulary.ts', render: renderVocabulary },
   { source: 'locales.json', output: 'locales.ts', render: renderLocales },
   { source: 'scales.json', output: 'scales.ts', render: renderScales },
   { source: 'preference_defaults.json', output: 'preference-defaults.ts', render: renderPreferenceDefaults },
+  { source: 'japanese_styles.json', output: 'japanese-styles.ts', render: renderJapaneseStyles },
   // JSON cannot carry the generated header, so the body styling catalog is mirrored verbatim.
   { source: 'body_styling_catalog.json', output: 'body-styling-catalog.json', raw: true },
 ];

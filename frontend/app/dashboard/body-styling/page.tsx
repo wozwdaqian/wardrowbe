@@ -13,6 +13,7 @@ import {
   Clock3,
   ChevronDown,
   Loader2,
+  Compass,
   Luggage,
   Ruler,
   Sparkles,
@@ -43,6 +44,8 @@ import {
 } from "@/components/ui/collapsible";
 import { OutfitFeedback } from "@/components/body-styling/outfit-feedback";
 import { openAssistant } from "@/components/assistant/assistant-panel";
+import { JAPANESE_STYLE_BASE } from "@/lib/generated/japanese-styles";
+import { styleName } from "@/lib/style-explore";
 import {
   GarmentWardrobeStatus,
   WardrobeMatch,
@@ -129,6 +132,8 @@ export default function BodyStylingPage() {
   const [measurements, setMeasurements] = useState<Record<string, string>>({});
   const [stylingProfile, setStylingProfile] = useState<StylingProfile>({});
   const [context, setContext] = useState<Context>(DEFAULT_CONTEXT);
+  const styleChosen = useRef(false);
+  const preferredStyles = stylingProfile.preferred_styles || [];
   const [selectedId, setSelectedId] = useState<string | null>(
     params.get("report"),
   );
@@ -180,6 +185,15 @@ export default function BodyStylingPage() {
     }
     setMeasurements(values);
     setStylingProfile(value.styling_profile || {});
+    // The first load picks the base style of the quiz result; later choices stay the user's.
+    const direction = value.styling_profile?.preferred_styles?.[0];
+    if (direction && !styleChosen.current) {
+      styleChosen.current = true;
+      setContext((current) => ({
+        ...current,
+        style: JAPANESE_STYLE_BASE[direction] as Context["style"],
+      }));
+    }
     setConflict(false);
   }
   useEffect(() => {
@@ -353,7 +367,7 @@ export default function BodyStylingPage() {
   }
   function factValue(fact: Fact) {
     if (fact.id in PROFILE_CATALOGS) {
-      const group = PROFILE_CATALOGS[fact.id as keyof StylingProfile];
+      const group = PROFILE_CATALOGS[fact.id as keyof typeof PROFILE_CATALOGS];
       return (Array.isArray(fact.value) ? fact.value : [String(fact.value)])
         .map((value) => catalogLabel(group, value, locale))
         .join(" · ");
@@ -436,13 +450,26 @@ export default function BodyStylingPage() {
         <p className="max-w-2xl text-sm leading-7 text-muted-foreground">
           {t("intro")}
         </p>
-        <Link
-          href="/dashboard/body-styling/packing"
-          className="inline-flex items-center gap-1.5 text-sm text-emerald-800 underline-offset-4 hover:underline dark:text-emerald-300"
-        >
-          <Luggage className="h-4 w-4" />
-          {t("packing.open")}
-        </Link>
+        <div className="flex flex-wrap gap-x-5 gap-y-2">
+          <Link
+            href="/dashboard/body-styling/style"
+            className="inline-flex items-center gap-1.5 text-sm text-emerald-800 underline-offset-4 hover:underline dark:text-emerald-300"
+          >
+            <Compass className="h-4 w-4" />
+            {preferredStyles.length
+              ? `${t("styleExplore.entry")} · ${preferredStyles
+                  .map((id) => styleName(id, locale))
+                  .join(" · ")}`
+              : t("styleExplore.entryHint")}
+          </Link>
+          <Link
+            href="/dashboard/body-styling/packing"
+            className="inline-flex items-center gap-1.5 text-sm text-emerald-800 underline-offset-4 hover:underline dark:text-emerald-300"
+          >
+            <Luggage className="h-4 w-4" />
+            {t("packing.open")}
+          </Link>
+        </div>
       </header>
 
       {status.isError ? (

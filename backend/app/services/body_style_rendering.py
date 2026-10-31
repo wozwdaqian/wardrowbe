@@ -28,6 +28,9 @@ KINDS = {
     "shirt": ("衬衫", "shirt"),
     "knit": ("针织衫", "knitwear"),
     "sweatshirt": ("卫衣", "sweatshirt"),
+    "hoodie": ("连帽卫衣", "hoodie"),
+    "cargo_pants": ("工装裤", "cargo trousers"),
+    "fleece": ("抓绒外套", "fleece jacket"),
     "trousers": ("长裤", "trousers"),
     "jeans": ("牛仔裤", "jeans"),
     "shorts": ("短裤", "shorts"),
@@ -147,6 +150,7 @@ FACT_NAMES.update(
         "fabric_preferences": ("面料偏好", "fabric preferences"),
         "fit_issues": ("穿衣困扰", "fit concerns"),
         "previous_feedback": ("此前穿搭反馈", "previous outfit feedback"),
+        "preferred_styles": ("偏好风格", "preferred styles"),
     }
 )
 

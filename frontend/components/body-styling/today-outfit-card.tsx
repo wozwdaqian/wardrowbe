@@ -3,7 +3,15 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { Bot, Loader2, RefreshCw, Shirt, Sparkles, Wand2 } from "lucide-react";
+import {
+  Bot,
+  Compass,
+  Loader2,
+  RefreshCw,
+  Shirt,
+  Sparkles,
+  Wand2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -221,6 +229,16 @@ export function TodayOutfitCard() {
                     : "today.addClothes",
                 )}
               </Link>
+              {!data.style_direction && (
+                <Link
+                  href="/dashboard/body-styling/style"
+                  className="inline-flex items-center gap-1.5 text-xs text-emerald-800 underline-offset-4 hover:underline dark:text-emerald-300"
+                  data-testid="style-quiz-link"
+                >
+                  <Compass className="h-3.5 w-3.5" />
+                  {t("styleExplore.entryHint")}
+                </Link>
+              )}
             </div>
           </div>
         )}

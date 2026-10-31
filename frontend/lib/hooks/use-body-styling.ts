@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import { useSetTokenIfAvailable } from "@/lib/hooks/use-session-token";
 import { queryKeys } from "@/lib/hooks/query-keys";
 import type { ColorPlan, Garment } from "@/lib/body-styling";
+import type { JapaneseStyleId } from "@/lib/generated/japanese-styles";
 
 export type BodyStyleUnread = { unread: number; pending: number };
 
@@ -26,6 +27,8 @@ export type TodayOutfit = {
   date: string;
   occasion: "daily" | "work" | "date" | "weekend" | "formal";
   style: string;
+  // The quiz's main Japanese sub-style, when the user saved one.
+  style_direction: JapaneseStyleId | null;
   season: "spring" | "summer" | "autumn" | "winter";
   reroll: number;
   weather: {

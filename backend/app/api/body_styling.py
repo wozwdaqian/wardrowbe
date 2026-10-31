@@ -20,7 +20,7 @@ from app.schemas.body_styling import (
     OutfitFeedback,
     ReportFeedback,
 )
-from app.schemas.styling_profile import StylingProfile, styling_revision
+from app.schemas.styling_profile import StyleId, StylingProfile, styling_revision
 from app.services.body_style_packing import MAX_DAYS, build_packing
 from app.services.body_style_today import build_today, explain_today
 from app.services.body_styling_service import (
@@ -31,6 +31,7 @@ from app.services.body_styling_service import (
     recent_style_feedback,
     user_endpoints,
 )
+from app.services.style_explore import explore_result, round_one, round_two
 from app.services.wardrobe_matching import wardrobe_match
 from app.services.weather_service import WeatherService
 from app.utils.auth import get_current_user
@@ -338,3 +339,76 @@ async def packing_list(data: PackingRequest, db: DbSession, current_user: Curren
         location,
         list(items),
     )
+
+
+AnswerValue = Literal["like", "neutral", "dislike"]
+
+
+class StyleAnswers(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    answers: dict[str, AnswerValue] = Field(max_length=40)
+
+
+class StyleChoice(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    styles: list[StyleId] = Field(min_length=1, max_length=2)
+
+
+def current_profile(user: User) -> StylingProfile:
+    return StylingProfile.model_validate(user.styling_profile or {})
+
+
+def zh_locale(user: User) -> bool:
+    return (user.locale or "").startswith("zh")
+
+
+@router.get("/style-explore/round-one")
+async def style_round_one(current_user: CurrentUser) -> dict:
+    cards = round_one(current_user.id, current_profile(current_user), zh_locale(current_user))
+    return {"cards": cards}
+
+
+@router.post("/style-explore/round-two")
+async def style_round_two(data: StyleAnswers, current_user: CurrentUser) -> dict:
+    profile = current_profile(current_user)
+    return {"cards": round_two(current_user.id, profile, zh_locale(current_user), data.answers)}
+
+
+@router.post("/style-explore/result")
+async def style_result(data: StyleAnswers, db: DbSession, current_user: CurrentUser) -> dict:
+    try:
+        measurements = BodyMeasurements.model_validate(current_user.body_measurements or {})
+    except ValidationError:
+        measurements = None
+    items = (
+        await db.scalars(
+            select(ClothingItem).where(
+                ClothingItem.user_id == current_user.id, ClothingItem.is_archived.is_(False)
+            )
+        )
+    ).all()
+    return explore_result(
+        data.answers,
+        current_profile(current_user),
+        measurements,
+        list(items),
+        zh_locale(current_user),
+    )
+
+
+@router.patch("/style-explore/styles")
+async def save_preferred_styles(
+    data: StyleChoice, db: DbSession, current_user: CurrentUser
+) -> dict:
+    """Save the quiz result as the profile's style direction."""
+    await db.refresh(current_user, with_for_update=True)
+    profile = current_profile(current_user)
+    profile.preferred_styles = list(dict.fromkeys(data.styles))
+    current_user.styling_profile = profile.model_dump(exclude_none=True)
+    await db.flush()
+    return {
+        "preferred_styles": profile.preferred_styles,
+        "styling_profile_revision": styling_revision(
+            current_user.body_measurements, current_user.styling_profile
+        ),
+    }

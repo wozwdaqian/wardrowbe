@@ -1,3 +1,4 @@
+import type { JapaneseStyleId } from "@/lib/generated/japanese-styles";
 import catalog from "@/lib/generated/body-styling-catalog.json";
 export { catalog as STYLING_CATALOG };
 export type ColorFamily = keyof typeof catalog.color_families;
@@ -13,6 +14,8 @@ export type StylingProfile = {
   avoided_materials?: MaterialCode[];
   fabric_preferences?: (keyof typeof catalog.fabric_preferences)[];
   fit_issues?: (keyof typeof catalog.fit_issues)[];
+  // Set by the style quiz; the main Japanese sub-style first.
+  preferred_styles?: JapaneseStyleId[];
 };
 export const PROFILE_CATALOGS = {
   skin_depth: "skin_depth",
@@ -102,10 +105,11 @@ export const GARMENT_KINDS = {
     "turtleneck",
     "knit",
     "sweatshirt",
+    "hoodie",
     "cardigan",
     "vest",
   ],
-  bottom: ["trousers", "chinos", "jeans", "shorts"],
+  bottom: ["trousers", "chinos", "jeans", "cargo_pants", "shorts"],
   shoes: ["sneakers", "loafers", "boots", "derbies", "oxfords", "sandals"],
   outerwear: [
     "blazer",
@@ -115,6 +119,7 @@ export const GARMENT_KINDS = {
     "coat",
     "trench",
     "down_jacket",
+    "fleece",
   ],
   accessory: ["scarf", "belt", "bag", "cap", "tie", "watch", "glasses"],
 } as const;

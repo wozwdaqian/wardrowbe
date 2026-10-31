@@ -149,6 +149,8 @@ SEASONS = {
             "down_jacket",
             "turtleneck",
             "sweatshirt",
+            "hoodie",
+            "fleece",
             "boots",
             "scarf",
         ],
@@ -174,8 +176,12 @@ def _without(*kinds: str) -> dict[str, list[str]]:
 OCCASIONS = {
     "daily": OccasionRule(allowed_kinds=EVERYTHING),
     "weekend": OccasionRule(allowed_kinds=EVERYTHING),
-    "date": OccasionRule(allowed_kinds=_without("sweatshirt", "cap", "sandals")),
-    "work": OccasionRule(allowed_kinds=_without("shorts", "cap", "sweatshirt", "sandals")),
+    "date": OccasionRule(allowed_kinds=_without("sweatshirt", "hoodie", "cap", "sandals")),
+    "work": OccasionRule(
+        allowed_kinds=_without(
+            "shorts", "cap", "sweatshirt", "hoodie", "cargo_pants", "fleece", "sandals"
+        )
+    ),
     "formal": OccasionRule(
         allowed_kinds={
             "top": ["knit", "shirt", "turtleneck", "vest"],

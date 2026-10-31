@@ -10,6 +10,11 @@ CATALOG = json.loads((Path(__file__).parents[1] / "data/body_styling_catalog.jso
 Color = Literal[*CATALOG["colors"]]
 Material = Literal[*CATALOG["materials"]]
 ColorFamily = Literal[*CATALOG["color_families"]]
+# Japanese sub-styles found by the style quiz (services/style_explore.py).
+STYLE_DATA = json.loads((Path(__file__).parents[1] / "data/japanese_styles.json").read_text())[
+    "styles"
+]
+StyleId = Literal[*(style["id"] for style in STYLE_DATA)]
 PROFILE_CATALOGS = {
     "skin_depth": "skin_depth",
     "undertone": "undertone",
@@ -38,6 +43,8 @@ class StylingProfile(BaseModel):
         default_factory=list, max_length=6
     )
     fit_issues: list[Literal[*CATALOG["fit_issues"]]] = Field(default_factory=list, max_length=8)
+    # The main sub-style first; a second one when the quiz found two close favourites.
+    preferred_styles: list[StyleId] = Field(default_factory=list, max_length=2)
 
     @field_validator(
         "preferred_color_families",
@@ -45,6 +52,7 @@ class StylingProfile(BaseModel):
         "avoided_materials",
         "fabric_preferences",
         "fit_issues",
+        "preferred_styles",
     )
     @classmethod
     def no_duplicates(cls, values):
@@ -74,4 +82,7 @@ def styling_revision(measurements: dict | None, profile: dict | None) -> str:
     from app.utils.body_measurements import body_revision
 
     normalized = StylingProfile.model_validate(profile or {}).model_dump(exclude_none=True)
+    # Added later: an unset value must not change revisions computed before it existed.
+    if not normalized.get("preferred_styles"):
+        normalized.pop("preferred_styles", None)
     return body_revision({"measurements": measurements or {}, "styling_profile": normalized})

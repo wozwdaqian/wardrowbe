@@ -20,6 +20,7 @@ from app.services.body_style_fallback import today_outfit
 from app.services.body_style_rendering import resolve_text
 from app.services.body_style_rules import build_rules
 from app.services.body_styling_service import body_facts
+from app.services.style_explore import STYLES
 from app.services.weather_service import WeatherService
 
 logger = logging.getLogger(__name__)
@@ -76,6 +77,10 @@ async def build_today(
 ) -> dict:
     today = local_today(user)
     occasion = occasion or ("work" if today.weekday() < 5 else "weekend")
+    profile = StylingProfile.model_validate(user.styling_profile or {})
+    direction = profile.preferred_styles[0] if profile.preferred_styles else None
+    if style is None and direction:
+        style = STYLES[direction]["base_style"]
     if style is None:
         latest = await db.scalar(
             select(BodyStyleRecommendation.input_snapshot)
@@ -87,7 +92,6 @@ async def build_today(
     weather = await current_weather(user)
     season = season_for(today, weather.temperature if weather else None)
     request = BodyStyleRequest(occasion=occasion, style=style, season=season)
-    profile = StylingProfile.model_validate(user.styling_profile or {})
     try:
         measurements = BodyMeasurements.model_validate(user.body_measurements or {})
     except ValidationError:
@@ -105,6 +109,7 @@ async def build_today(
         "date": today.isoformat(),
         "occasion": occasion,
         "style": style,
+        "style_direction": direction,
         "season": season,
         "reroll": reroll,
         "weather": {

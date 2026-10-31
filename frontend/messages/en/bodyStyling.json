@@ -174,7 +174,10 @@
     "down_jacket": "Down jacket",
     "tie": "Tie",
     "watch": "Watch",
-    "glasses": "Glasses"
+    "glasses": "Glasses",
+    "hoodie": "Hoodie",
+    "cargo_pants": "Cargo trousers",
+    "fleece": "Fleece jacket"
   },
   "fit": {
     "slim": "Slim",
@@ -303,5 +306,56 @@
     "toBuy": "not in your wardrobe",
     "daysTitle": "Day by day",
     "open": "Trip packing list"
+  },
+  "styleExplore": {
+    "title": "Style explorer",
+    "subtitle": "Japanese menswear has many branches. Go with your gut and find yours.",
+    "entry": "Style explorer",
+    "entryHint": "Not sure what your style is? Take the quiz",
+    "intro": "You will see a set of Japanese-style outfits. Don't overthink it: pick Like, Neutral or Dislike on first impression.",
+    "howRoundOne": "Round one: one look from each Japanese sub-style, about 11 in all.",
+    "howRoundTwo": "Round two: two more looks from each of your three favourite directions.",
+    "howResult": "Then you get your main style, a starter checklist checked against your wardrobe, and search terms to explore further.",
+    "start": "Start the quiz",
+    "retake": "Retake the quiz",
+    "back": "Back to body styling",
+    "current": "Your current style: {styles}",
+    "roundOne": "Round one · first impressions",
+    "roundTwo": "Round two · a closer look",
+    "progress": "{current} / {total}",
+    "like": "Like",
+    "neutral": "Neutral",
+    "dislike": "Dislike",
+    "previous": "Previous",
+    "calculating": "Reading your choices…",
+    "resultTitle": "Your Japanese style",
+    "unsure": "Nothing clicked this time; these two are the easiest places for a beginner to start",
+    "mainStyle": "Main style",
+    "secondStyle": "Second style",
+    "likedColors": "The looks you liked often used: {colors}",
+    "bodyNote": {
+      "solid": "For reference: Japanese style guides find relaxed silhouettes such as workwear, yamakei, City Boy and Amekaji the most forgiving. What you like comes first.",
+      "tall_slim": "For reference: a tall, slim frame carries clean or long styles such as kireime, mode and Ivy especially well. What you like comes first."
+    },
+    "save": "Make this my style",
+    "saved": "Saved as your style",
+    "saveHint": "Once saved, today's outfit, body styling reports and the assistant follow this direction. You can retake the quiz any time.",
+    "report": "Create a report in this style",
+    "ask": "Ask the assistant how to start",
+    "askPrompt": "My style quiz result is \"{style}\". I'm new to dressing well; how should I start and what should I buy first?",
+    "tips": "How to start",
+    "pitfalls": "Common mistakes",
+    "starter": "Starter checklist",
+    "starterHint": "Checked against your wardrobe",
+    "status": {
+      "owned": "Owned",
+      "similar": "Similar owned",
+      "missing": "Missing"
+    },
+    "search": "Search terms (tap to copy)",
+    "copy": "Copy \"{term}\"",
+    "brands": "Representative brands",
+    "ranking": "Scores by style",
+    "error": "Something went wrong. Please try again."
   }
 }

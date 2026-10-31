@@ -107,10 +107,11 @@ SLOT_KINDS = {
         "turtleneck",
         "knit",
         "sweatshirt",
+        "hoodie",
         "cardigan",
         "vest",
     },
-    "bottom": {"trousers", "chinos", "jeans", "shorts"},
+    "bottom": {"trousers", "chinos", "jeans", "cargo_pants", "shorts"},
     "shoes": {"sneakers", "loafers", "boots", "derbies", "oxfords", "sandals"},
     "outerwear": {
         "blazer",
@@ -120,13 +121,14 @@ SLOT_KINDS = {
         "coat",
         "trench",
         "down_jacket",
+        "fleece",
     },
     "accessory": {"scarf", "belt", "bag", "cap", "tie", "watch", "glasses"},
 }
 GarmentKind = Literal[*sorted(set().union(*SLOT_KINDS.values()))]
 # A second top is a layer: one base piece worn under one mid layer.
 BASE_TOPS = {"tshirt", "polo", "shirt", "turtleneck"}
-MID_TOPS = {"knit", "sweatshirt", "cardigan", "vest"}
+MID_TOPS = {"knit", "sweatshirt", "hoodie", "cardigan", "vest"}
 Pattern = Literal[*CATALOG["patterns"]]
 SLOT_LIMITS = {
     "top": (1, 2),
@@ -249,7 +251,7 @@ class BodyOutfit(StrictModel):
         if len(tops) == 2 and not (set(tops) & BASE_TOPS and set(tops) & MID_TOPS):
             raise ValueError(
                 "two tops must be a layer: one of tshirt/polo/shirt/turtleneck under one "
-                "of knit/sweatshirt/cardigan/vest"
+                "of knit/sweatshirt/hoodie/cardigan/vest"
             )
         if tops == ["vest"]:
             raise ValueError("a vest is a layer and needs a base top underneath")

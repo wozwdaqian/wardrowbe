@@ -12,6 +12,7 @@ function Top({
   height,
   open = false,
   fill,
+  innerFill = "#f4f2ec",
 }: {
   g: Garment;
   x: number;
@@ -20,6 +21,8 @@ function Top({
   height: number;
   open?: boolean;
   fill?: string;
+  // What shows between the open front edges: the garment worn underneath.
+  innerFill?: string;
 }) {
   const shortSleeve = ["tshirt", "polo"].includes(g.kind);
   const sleeveless = g.kind === "vest";
@@ -42,6 +45,19 @@ function Top({
         }
       />
       {g.kind === "turtleneck" && <path d="M38 -4H62V12Q50 18 38 12Z" />}
+      {g.kind === "hoodie" && (
+        <>
+          <path d="M31 9Q30 -12 50 -13Q70 -12 69 9Q50 22 31 9Z" />
+          <path d="M33 72H67L71 97H29Z" fill="none" />
+          <path d="M45 18V36M55 18V36" fill="none" />
+        </>
+      )}
+      {g.kind === "fleece" && (
+        <>
+          <path d="M36 2H64V13Q50 20 36 13Z" />
+          <path d="M50 9V107M60 34H70V46H60Z" fill="none" />
+        </>
+      )}
       {g.kind === "down_jacket" && (
         <path
           d="M27 35H73M27 55H73M27 75H73M27 95H73M4 50 22 52M96 50 78 52"
@@ -56,7 +72,7 @@ function Top({
         <>
           <path
             d="M40 12 43 108H57L60 12 50 23Z"
-            fill="#f4f2ec"
+            fill={innerFill}
             stroke="none"
           />
           <path
@@ -68,7 +84,7 @@ function Top({
         <path d="M50 45V105M47 60H53M47 78H53" fill="none" />
       ) : (
         <>
-          {g.kind !== "turtleneck" && (
+          {!["turtleneck", "hoodie", "fleece"].includes(g.kind) && (
             <path d="M35 9Q50 30 65 9" fill="none" strokeWidth="2" />
           )}
           {["shirt", "polo"].includes(g.kind) && !sleeveless && (
@@ -89,6 +105,7 @@ function Top({
 const MID_LAYERS: Garment["kind"][] = [
   "knit",
   "sweatshirt",
+  "hoodie",
   "cardigan",
   "vest",
 ];
@@ -235,6 +252,9 @@ export function OutfitIllustration({ outfit }: { outfit: BodyOutfit }) {
           fill="none"
         />
         <path d="M5 190H39M61 190H96" fill="none" />
+        {bottom.kind === "cargo_pants" && (
+          <path d="M1 92H17V122H1ZM83 92H99V122H83Z" fill="none" />
+        )}
       </g>
       {outer && (
         <Top
@@ -244,7 +264,7 @@ export function OutfitIllustration({ outfit }: { outfit: BodyOutfit }) {
           y={40}
           width={
             silhouetteMetrics(outer).width +
-            (outer.kind === "down_jacket" ? 37 : 27)
+            (["down_jacket", "fleece"].includes(outer.kind) ? 33 : 27)
           }
           height={
             longOuter
@@ -252,6 +272,8 @@ export function OutfitIllustration({ outfit }: { outfit: BodyOutfit }) {
               : silhouetteMetrics(outer).topHeight + 20
           }
           open={OPEN_LAYERS.includes(outer.kind)}
+          // The top covers the chest, so below its hem the trousers show through.
+          innerFill={fill(bottom)}
         />
       )}
       <Top
@@ -279,6 +301,7 @@ export function OutfitIllustration({ outfit }: { outfit: BodyOutfit }) {
           height={silhouetteMetrics(mid).topHeight - 4}
           fill={fill(mid)}
           open={mid.kind === "cardigan"}
+          innerFill={fill(top)}
         />
       )}
       {outer && OPEN_LAYERS.includes(outer.kind) && (
