@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { Loader2, RefreshCw, Shirt, Sparkles, Wand2 } from "lucide-react";
+import { Bot, Loader2, RefreshCw, Shirt, Sparkles, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OutfitIllustration } from "@/components/body-styling/outfit-illustration";
+import { openAssistant } from "@/components/assistant/assistant-panel";
 import { useExplainToday, useTodayOutfit } from "@/lib/hooks/use-body-styling";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
@@ -25,6 +26,7 @@ const OCCASIONS = ["work", "weekend", "daily", "date", "formal"] as const;
 
 export function TodayOutfitCard() {
   const t = useTranslations("bodyStyling");
+  const ta = useTranslations("assistant");
   const [occasion, setOccasion] = useState<string | null>(null);
   const [reroll, setReroll] = useState(0);
   const today = useTodayOutfit(occasion, reroll);
@@ -185,6 +187,15 @@ export function TodayOutfitCard() {
                     {t("today.explain")}
                   </Button>
                 )}
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => openAssistant(ta("prompts.today"))}
+                >
+                  <Bot className="mr-1.5 h-4 w-4" />
+                  {ta("open")}
+                </Button>
                 <Button
                   asChild
                   size="sm"

@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowRight,
+  Bot,
   Check,
   CheckCircle2,
   Clock3,
@@ -41,6 +42,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { OutfitFeedback } from "@/components/body-styling/outfit-feedback";
+import { openAssistant } from "@/components/assistant/assistant-panel";
 import {
   GarmentWardrobeStatus,
   WardrobeMatch,
@@ -107,6 +109,7 @@ type ReadyReport = BodyStyleReport & {
 
 export default function BodyStylingPage() {
   const t = useTranslations("bodyStyling");
+  const ta = useTranslations("assistant");
   const locale = useLocale();
   const router = useRouter();
   const params = useSearchParams();
@@ -832,6 +835,15 @@ export default function BodyStylingPage() {
                       )}
                       {dateLabel(report.created_at)}
                     </span>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => openAssistant(ta("prompts.explain"))}
+                    >
+                      <Bot className="mr-1.5 h-4 w-4" />
+                      {ta("open")}
+                    </Button>
                   </div>
                   <CardDescription className="pt-2 text-base leading-7 text-foreground">
                     {report.result.summary}

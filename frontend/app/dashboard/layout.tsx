@@ -11,6 +11,7 @@ import { Header } from '@/components/header';
 import { OfflineIndicator } from '@/components/offline-indicator';
 import { UploadQueueIndicator } from '@/components/upload-queue-indicator';
 import { ImageLightbox } from '@/components/image-lightbox';
+import { AssistantPanel } from '@/components/assistant/assistant-panel';
 import { LightboxProvider } from '@/lib/lightbox-context';
 import { useAuth } from '@/lib/hooks/use-auth';
 
@@ -69,6 +70,7 @@ export default function DashboardLayout({
         <OfflineIndicator />
         <UploadQueueIndicator />
         <ImageLightbox />
+        <AssistantPanel />
       </div>
     </LightboxProvider>
   );

@@ -450,7 +450,10 @@ class AIService:
         task_name: str,
         use_vision_model: bool = True,
         request_logprobs: bool = False,
-    ) -> tuple[str | None, Exception | None, list | None]:
+        tools: list[dict] | None = None,
+        full_message: bool = False,
+    ) -> tuple[str | dict | None, Exception | None, list | None]:
+        """With `full_message`, the first value is {"message", "model"} so tool calls survive."""
         last_error = None
         every_endpoint_repeats = True
 
@@ -476,6 +479,8 @@ class AIService:
                             request_body["top_logprobs"] = 3
                         if use_reasoning_effort and current_reasoning_effort:
                             request_body["reasoning_effort"] = current_reasoning_effort
+                        if tools:
+                            request_body["tools"] = tools
 
                         response = await client.post(
                             f"{endpoint.url}/chat/completions",
@@ -521,6 +526,12 @@ class AIService:
                                 f"AI {task_name} successful via {endpoint.name} "
                                 f"(model: {used_model})"
                             )
+                            if full_message:
+                                return (
+                                    {"message": choice["message"], "model": used_model},
+                                    None,
+                                    None,
+                                )
                             return content, None, logprobs_content
 
                         last_error = empty_error
@@ -739,6 +750,19 @@ class AIService:
             "endpoints": endpoints_health,
         }
 
+    async def chat(self, messages: list[dict], tools: list[dict] | None = None) -> dict:
+        """One chat turn with optional OpenAI-style tools, using the text model.
+
+        Returns {"message": <assistant message, possibly with tool_calls>, "model": str}.
+        Endpoint failover, retries and the reasoning_effort fallback are shared with tagging.
+        """
+        result, error, _ = await self._call_with_fallback(
+            messages, "chat", use_vision_model=False, tools=tools, full_message=True
+        )
+        if result is None:
+            raise error or RuntimeError("Chat failed - no endpoints available")
+        return result
+
     async def generate_text(
         self,
         prompt: str,
@@ -904,7 +928,7 @@ def _empty_response_error(
 ) -> AIResponseTruncatedError | None:
     message = choice["message"]
     content = message.get("content")
-    if content and content.strip():
+    if (content and content.strip()) or message.get("tool_calls"):
         return None
 
     finish_reason = choice.get("finish_reason")

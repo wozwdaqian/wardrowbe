@@ -80,6 +80,62 @@ async function fetchApi<T>(endpoint: string, options: FetchOptions = {}): Promis
   return response.json();
 }
 
+export type StreamEvent = { type: string; [key: string]: unknown };
+
+// POSTs JSON and yields each server-sent event's `data:` payload as it arrives.
+export async function* streamApi(
+  endpoint: string,
+  body?: unknown,
+  signal?: AbortSignal
+): AsyncGenerator<StreamEvent> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    Accept: 'text/event-stream',
+  };
+  if (accessToken) {
+    headers['Authorization'] = `Bearer ${accessToken}`;
+  }
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_PATH}${endpoint}`, {
+      method: 'POST',
+      headers,
+      body: body === undefined ? undefined : JSON.stringify(body),
+      credentials: 'include',
+      signal,
+    });
+  } catch (err) {
+    if (signal?.aborted) throw err;
+    throw new NetworkError('Unable to connect to server. Please try again.');
+  }
+  if (!response.ok || !response.body) {
+    const data = await response.json().catch(() => ({}));
+    const message = (typeof data.detail === 'string' ? data.detail : data.detail?.message)
+      || 'An error occurred';
+    throw new ApiError(message, response.status, data);
+  }
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  while (true) {
+    const { done, value } = await reader.read();
+    if (value) buffer += decoder.decode(value, { stream: !done });
+    let boundary = buffer.indexOf('\n\n');
+    while (boundary !== -1) {
+      const block = buffer.slice(0, boundary);
+      buffer = buffer.slice(boundary + 2);
+      const data = block
+        .split('\n')
+        .filter((line) => line.startsWith('data:'))
+        .map((line) => line.slice(5).trimStart())
+        .join('\n');
+      if (data) yield JSON.parse(data) as StreamEvent;
+      boundary = buffer.indexOf('\n\n');
+    }
+    if (done) return;
+  }
+}
+
 export const api = {
   get: <T>(endpoint: string, options?: FetchOptions) =>
     fetchApi<T>(endpoint, { ...options, method: 'GET' }),

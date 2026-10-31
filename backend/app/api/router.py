@@ -3,6 +3,7 @@
 from fastapi import APIRouter
 
 from app.api.analytics import router as analytics_router
+from app.api.assistant import router as assistant_router
 from app.api.auth import router as auth_router
 from app.api.body_styling import router as body_styling_router
 from app.api.families import router as families_router
@@ -22,6 +23,7 @@ api_router = APIRouter()
 # Include sub-routers
 api_router.include_router(health_router, tags=["health"])
 api_router.include_router(body_styling_router)
+api_router.include_router(assistant_router)
 api_router.include_router(auth_router)
 api_router.include_router(users_router)
 api_router.include_router(items_router)

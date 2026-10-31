@@ -33,6 +33,10 @@ class BodyStyleRecommendation(Base):
     result: Mapped[dict | None] = mapped_column(JSONB(none_as_null=True))
     model: Mapped[str | None] = mapped_column(String(255))
     feedback: Mapped[dict | None] = mapped_column(JSONB(none_as_null=True))
+    # Set when the report was derived from another one (e.g. one outfit regenerated).
+    parent_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("body_style_recommendations.id", ondelete="SET NULL")
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

@@ -1,0 +1,51 @@
+{
+  "open": "Styling assistant",
+  "title": "Styling assistant",
+  "intro": "Ask me about outfits, or have me update your profile, rework a look or record feedback. Profile edits and deletions wait for your confirmation; everything else can be undone.",
+  "placeholder": "e.g. A friend's wedding tomorrow, and it's getting cold",
+  "send": "Send",
+  "newChat": "New chat",
+  "thinking": "Thinking…",
+  "usingTool": "Checking: {tool}",
+  "confirm": "Confirm",
+  "reject": "Don't",
+  "undo": "Undo",
+  "openReport": "Open report",
+  "status": {
+    "pending": "Waiting for you",
+    "applied": "Done",
+    "rejected": "Declined",
+    "undone": "Undone",
+    "failed": "Failed"
+  },
+  "error": {
+    "ai_unavailable": "Configure and enable a text model in settings to use the assistant.",
+    "ai_failed": "The model did not respond. Please try again.",
+    "rate": "Too many messages; please wait a minute.",
+    "action": "That did not work: {message}",
+    "generic": "Something went wrong. Please try again."
+  },
+  "prompts": {
+    "explain": "Explain my latest report",
+    "commute": "Make look 2 of my latest report work-ready",
+    "waist": "My waist measurement changed",
+    "today": "What should I wear today?"
+  },
+  "tools": {
+    "get_profile": "your profile",
+    "list_reports": "your reports",
+    "get_report": "the report",
+    "search_wardrobe": "your wardrobe",
+    "get_weather": "the weather",
+    "get_wear_history": "what you wore",
+    "get_today_outfit": "today's look",
+    "wardrobe_gaps": "wardrobe gaps",
+    "create_report": "creating a report",
+    "regenerate_outfit": "reworking a look",
+    "replace_garment": "swapping a piece",
+    "set_feedback": "saving feedback",
+    "log_wear": "logging wear",
+    "update_profile": "profile change",
+    "delete_report": "deleting a report"
+  }
+}

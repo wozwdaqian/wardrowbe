@@ -1,0 +1,51 @@
+{
+  "open": "穿搭助手",
+  "title": "穿搭助手",
+  "intro": "可以問我穿搭問題，或者讓我幫你改資料、換掉某一套、記錄反饋。改資料和刪除會先請你確認，其他改動都能撤銷。",
+  "placeholder": "例如：明天去朋友婚禮，北京降溫",
+  "send": "發送",
+  "newChat": "新對話",
+  "thinking": "正在思考…",
+  "usingTool": "正在查看：{tool}",
+  "confirm": "確認",
+  "reject": "不用了",
+  "undo": "撤銷",
+  "openReport": "查看報告",
+  "status": {
+    "pending": "等你確認",
+    "applied": "已完成",
+    "rejected": "已取消",
+    "undone": "已撤銷",
+    "failed": "沒有成功"
+  },
+  "error": {
+    "ai_unavailable": "需要先在設定裡設定並啟用文字模型，助手才能工作。",
+    "ai_failed": "模型暫時沒有回應，請稍後再試。",
+    "rate": "發得太快了，請稍等一分鐘。",
+    "action": "操作沒有成功：{message}",
+    "generic": "出了點問題，請重試。"
+  },
+  "prompts": {
+    "explain": "解釋一下我最新的這份報告",
+    "commute": "把最新報告的第二套換成通勤風",
+    "waist": "我的腰圍變了",
+    "today": "今天穿什麼合適？"
+  },
+  "tools": {
+    "get_profile": "身材和偏好",
+    "list_reports": "報告列表",
+    "get_report": "報告內容",
+    "search_wardrobe": "衣櫥",
+    "get_weather": "天氣",
+    "get_wear_history": "穿著記錄",
+    "get_today_outfit": "今日穿搭",
+    "wardrobe_gaps": "衣櫥缺口",
+    "create_report": "生成報告",
+    "regenerate_outfit": "重新生成",
+    "replace_garment": "替換單品",
+    "set_feedback": "記錄反饋",
+    "log_wear": "記錄穿著",
+    "update_profile": "修改資料",
+    "delete_report": "刪除報告"
+  }
+}
