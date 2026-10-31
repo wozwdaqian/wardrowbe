@@ -5,18 +5,27 @@ from collections.abc import AsyncIterator
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from sqlalchemy import select
 
+from app.config import get_settings
 from app.database import DbSession, async_session_maker
-from app.models.assistant import AssistantAction, AssistantConversation, AssistantMessage
+from app.models.assistant import (
+    AssistantAction,
+    AssistantConversation,
+    AssistantImage,
+    AssistantMessage,
+)
 from app.models.user import User
-from app.services.assistant_service import MAX_MESSAGE_CHARS, Assistant, action_view
+from app.services.assistant_service import MAX_IMAGES, MAX_MESSAGE_CHARS, Assistant, action_view
 from app.services.assistant_tools import ToolError
+from app.services.image_service import ImageService
 from app.utils.auth import get_current_user
 from app.utils.rate_limit import check_rate_limit
+from app.utils.signed_urls import sign_image_url
+from app.utils.uploads import UploadTooLargeError, read_upload_within_limit
 
 router = APIRouter(prefix="/assistant", tags=["Assistant"])
 CurrentUser = Annotated[User, Depends(get_current_user)]
@@ -26,7 +35,22 @@ session_factory = async_session_maker
 
 class MessageIn(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
-    content: str = Field(min_length=1, max_length=MAX_MESSAGE_CHARS)
+    content: str = Field("", max_length=MAX_MESSAGE_CHARS)
+    image_ids: list[UUID] = Field(default_factory=list, max_length=MAX_IMAGES)
+
+    @model_validator(mode="after")
+    def not_empty(self):
+        if not self.content and not self.image_ids:
+            raise ValueError("send text or at least one image")
+        return self
+
+
+def image_view(image: AssistantImage) -> dict:
+    return {
+        "id": str(image.id),
+        "thumbnail_url": sign_image_url(image.thumbnail_path),
+        "url": sign_image_url(image.medium_path),
+    }
 
 
 def conversation_view(conversation: AssistantConversation) -> dict:
@@ -77,18 +101,24 @@ async def list_conversations(
 @router.get("/conversations/{conversation_id}")
 async def get_conversation(conversation_id: UUID, db: DbSession, current_user: CurrentUser) -> dict:
     conversation = await own_conversation(db, current_user, conversation_id)
-    messages = (
+    rows = (
         await db.scalars(
             select(AssistantMessage)
             .where(
                 AssistantMessage.conversation_id == conversation.id,
                 AssistantMessage.role.in_(("user", "assistant")),
-                AssistantMessage.content.is_not(None),
-                AssistantMessage.content != "",
             )
             .order_by(AssistantMessage.seq)
         )
     ).all()
+    images: dict = {}
+    for image in await db.scalars(
+        select(AssistantImage)
+        .where(AssistantImage.message_id.in_([row.id for row in rows]))
+        .order_by(AssistantImage.created_at)
+    ):
+        images.setdefault(image.message_id, []).append(image_view(image))
+    messages = [row for row in rows if row.content or row.id in images]
     actions = (
         await db.scalars(
             select(AssistantAction)
@@ -102,7 +132,8 @@ async def get_conversation(conversation_id: UUID, db: DbSession, current_user: C
             {
                 "id": str(m.id),
                 "role": m.role,
-                "content": m.content,
+                "content": m.content or "",
+                "images": images.get(m.id, []),
                 "created_at": m.created_at.isoformat(),
             }
             for m in messages
@@ -111,12 +142,14 @@ async def get_conversation(conversation_id: UUID, db: DbSession, current_user: C
     }
 
 
-def stream(user_id: UUID, conversation_id: UUID, text: str | None) -> StreamingResponse:
+def stream(
+    user_id: UUID, conversation_id: UUID, text: str | None, image_ids: list[UUID] | None = None
+) -> StreamingResponse:
     async def events() -> AsyncIterator[str]:
         async with session_factory() as db:
             user = await db.get(User, user_id)
             conversation = await db.get(AssistantConversation, conversation_id)
-            async for event in Assistant(db, user).turn(conversation, text):
+            async for event in Assistant(db, user).turn(conversation, text, image_ids):
                 yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
         yield 'data: {"type": "done"}\n\n'
 
@@ -133,7 +166,38 @@ async def send_message(
 ) -> StreamingResponse:
     conversation = await own_conversation(db, current_user, conversation_id)
     await check_rate_limit(f"assistant:{current_user.id}", limit=10, window_seconds=60)
-    return stream(current_user.id, conversation.id, data.content)
+    if data.image_ids:
+        found = await Assistant(db, current_user).unattached_images(data.image_ids)
+        if len(found) != len(set(data.image_ids)):
+            raise HTTPException(status_code=422, detail="Unknown or already sent image")
+    return stream(current_user.id, conversation.id, data.content, data.image_ids)
+
+
+@router.post("/images", status_code=201)
+async def upload_image(
+    db: DbSession, current_user: CurrentUser, image: UploadFile = File(...)
+) -> dict:
+    """Store a photo for the next message; it is linked to that message when sent."""
+    await check_rate_limit(f"assistant-image:{current_user.id}", limit=20, window_seconds=60)
+    try:
+        content = await read_upload_within_limit(image, get_settings().max_upload_size_mb)
+    except UploadTooLargeError as exc:
+        raise HTTPException(status_code=413, detail=str(exc)) from None
+    service = ImageService()
+    if not service.validate_image(content, image.content_type or "application/octet-stream"):
+        raise HTTPException(
+            status_code=400, detail="Invalid image file. Supported formats: JPEG, PNG, WebP, HEIC"
+        )
+    try:
+        paths = await service.process_and_store(
+            current_user.id, content, image.filename or "upload.jpg"
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from None
+    record = AssistantImage(user_id=current_user.id, **paths)
+    db.add(record)
+    await db.flush()
+    return image_view(record)
 
 
 @router.post("/conversations/{conversation_id}/continue")

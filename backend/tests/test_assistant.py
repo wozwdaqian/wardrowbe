@@ -47,8 +47,8 @@ class ScriptedAI:
     def __init__(self, endpoints=None):
         pass
 
-    async def chat(self, messages, tools=None):
-        ScriptedAI.calls.append({"messages": messages, "tools": tools})
+    async def chat(self, messages, tools=None, vision=False):
+        ScriptedAI.calls.append({"messages": messages, "tools": tools, "vision": vision})
         if tools and ScriptedAI.reject_tools:
             request = httpx.Request("POST", "http://ai.invalid")
             raise httpx.HTTPStatusError(
@@ -96,27 +96,21 @@ async def report(db_session, user):
 
 
 @pytest.mark.asyncio
-async def test_profile_change_needs_confirmation_and_can_be_undone(ai, db_session, test_user):
+async def test_profile_change_is_saved_at_once_and_can_be_undone(ai, db_session, test_user):
     conversation = await setup(db_session, test_user)
     ai.script = [
         call("update_profile", body_measurements={"waist": 88}),
-        say("我已提出把腰围改为 88，请确认。"),
+        say("已把腰围更新为 88。"),
     ]
     events = await run(db_session, test_user, conversation, "我腰围变成 88 了")
     action = next(e["action"] for e in events if e["type"] == "action")
-    assert action["status"] == "pending" and "腰围 90 → 88" in action["summary"]
+    assert action["status"] == "applied" and "腰围 90 → 88" in action["summary"]
     assert "88.0" not in action["summary"]
     await db_session.refresh(test_user)
-    assert test_user.body_measurements["waist"] == 90
-
-    confirmed = await Assistant(db_session, test_user).confirm(action["id"])
-    assert confirmed.status == "applied"
-    await db_session.refresh(test_user)
     assert test_user.body_measurements["waist"] == 88
-    # The model is told about the confirmation on its next turn.
-    ai.script = [say("好的，已更新。")]
-    await run(db_session, test_user, conversation, None)
-    assert any("confirmed" in (m.get("content") or "") for m in ai.calls[-1]["messages"])
+    # The model hears the change was saved, not that it waits for a confirmation.
+    tool_result = json.loads(ai.calls[-1]["messages"][-1]["content"])["data"]
+    assert "done" in tool_result and "proposed" not in tool_result
 
     undone = await Assistant(db_session, test_user).undo(action["id"])
     assert undone.status == "undone"
@@ -132,15 +126,33 @@ async def test_undo_refuses_when_profile_changed_again(
     ai.script = [call("update_profile", body_measurements={"waist": 88}), say("ok")]
     events = await run(db_session, test_user, conversation, "腰围 88")
     action_id = next(e["action"]["id"] for e in events if e["type"] == "action")
-    assert (
-        await client.post(f"{BASE}/actions/{action_id}/confirm", headers=auth_headers)
-    ).status_code == 200
     test_user.body_measurements = {**test_user.body_measurements, "waist": 86}
     await db_session.commit()
     response = await client.post(f"{BASE}/actions/{action_id}/undo", headers=auth_headers)
     assert response.status_code == 409
     await db_session.refresh(test_user)
     assert test_user.body_measurements["waist"] == 86
+
+
+@pytest.mark.asyncio
+async def test_profile_proposal_saved_before_the_change_cannot_be_confirmed(
+    ai, db_session, test_user, client, auth_headers
+):
+    conversation = await setup(db_session, test_user)
+    legacy = AssistantAction(
+        conversation_id=conversation.id,
+        user_id=test_user.id,
+        tool="update_profile",
+        args={"body_measurements": {"waist": 70}},
+        status="pending",
+        summary="修改资料：腰围 90 → 70",
+    )
+    db_session.add(legacy)
+    await db_session.commit()
+    response = await client.post(f"{BASE}/actions/{legacy.id}/confirm", headers=auth_headers)
+    assert response.status_code == 409
+    await db_session.refresh(test_user)
+    assert test_user.body_measurements["waist"] == 90
 
 
 @pytest.mark.asyncio
@@ -414,3 +426,12 @@ async def test_delete_proposal_names_the_looks(ai, db_session, test_user):
     events = await run(db_session, test_user, conversation, "删除")
     summary = next(e["action"]["summary"] for e in events if e["type"] == "action")
     assert record.result["outfits"][0]["title"][:10] in summary
+
+
+@pytest.mark.asyncio
+async def test_profile_summary_names_catalog_values(ai, db_session, test_user):
+    conversation = await setup(db_session, test_user)
+    ai.script = [call("update_profile", styling_profile={"avoided_materials": ["wool"]}), say("ok")]
+    events = await run(db_session, test_user, conversation, "别给我推荐羊毛")
+    summary = next(e["action"]["summary"] for e in events if e["type"] == "action")
+    assert summary.endswith("— → 羊毛") and "wool" not in summary

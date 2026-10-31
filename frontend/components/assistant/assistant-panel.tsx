@@ -4,9 +4,24 @@ import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useQueryClient, type QueryClient } from "@tanstack/react-query";
-import { Bot, Loader2, MessageSquarePlus, Send, Undo2 } from "lucide-react";
-import { api, ApiError, streamApi, type StreamEvent } from "@/lib/api";
+import {
+  Bot,
+  ImagePlus,
+  Loader2,
+  MessageSquarePlus,
+  Send,
+  Undo2,
+  X,
+} from "lucide-react";
+import {
+  api,
+  ApiError,
+  streamApi,
+  uploadApi,
+  type StreamEvent,
+} from "@/lib/api";
 import { queryKeys } from "@/lib/hooks/query-keys";
+import { ACCEPTED_IMAGE_INPUT } from "@/lib/image-types";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -25,12 +40,15 @@ export type AssistantAction = {
   undoable: boolean;
   created_at?: string | null;
 };
+type Photo = { id?: string; url: string };
+type Attachment = { key: string; file: File; preview: string };
 type Entry =
   | {
       kind: "message";
       key: string;
       role: "user" | "assistant";
       content: string;
+      images?: Photo[];
     }
   | { kind: "action"; key: string; action: AssistantAction };
 type Conversation = {
@@ -39,12 +57,14 @@ type Conversation = {
     id: string;
     role: "user" | "assistant";
     content: string;
+    images?: { id: string; thumbnail_url: string; url: string }[];
     created_at: string;
   }[];
   actions: AssistantAction[];
 };
 
 const STORAGE_KEY = "wardrowbe.assistant.conversation";
+export const MAX_IMAGES = 4;
 export const OPEN_EVENT = "wardrowbe:assistant-open";
 
 // Lets any page open the panel, optionally with a prepared question.
@@ -73,7 +93,7 @@ export function refreshAfter(queryClient: QueryClient, tool: string) {
   const keys: readonly (readonly unknown[])[] =
     tool === "update_profile"
       ? [queryKeys.userProfile, queryKeys.bodyStyling.todayAll]
-      : tool === "log_wear"
+      : tool === "log_wear" || tool === "add_wardrobe_item"
         ? [
             queryKeys.items.all,
             queryKeys.wearStats.all,
@@ -94,6 +114,8 @@ export function AssistantPanel() {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [entries, setEntries] = useState<Entry[]>([]);
   const [input, setInput] = useState("");
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [tool, setTool] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -127,6 +149,10 @@ export function AssistantPanel() {
               key: m.id,
               role: m.role,
               content: m.content,
+              images: m.images?.map((image) => ({
+                id: image.id,
+                url: image.thumbnail_url,
+              })),
             } as Entry,
           })),
           ...conversation.actions.map((a) => ({
@@ -196,12 +222,17 @@ export function AssistantPanel() {
     try {
       await work();
     } catch (err) {
+      const status = err instanceof ApiError ? err.status : 0;
       setError(
-        err instanceof ApiError && err.status === 429
+        status === 429
           ? t("error.rate")
-          : err instanceof ApiError && err.status === 409
-            ? t("error.action", { message: err.message })
-            : t("error.generic"),
+          : status === 409
+            ? t("error.action", { message: (err as ApiError).message })
+            : status === 413
+              ? t("error.imageTooLarge")
+              : status === 400
+                ? t("error.imageInvalid")
+                : t("error.generic"),
       );
     } finally {
       setBusy(false);
@@ -209,16 +240,62 @@ export function AssistantPanel() {
     }
   }
 
+  function attach(files: FileList | null) {
+    // HEIC often arrives without a MIME type, so the extension decides.
+    const picked = Array.from(files || []).filter((file) =>
+      ACCEPTED_IMAGE_INPUT.split(",").some((ext) =>
+        file.name.toLowerCase().endsWith(ext),
+      ),
+    );
+    if (attachments.length + picked.length > MAX_IMAGES)
+      setError(t("imageLimit", { count: MAX_IMAGES }));
+    const room = picked.slice(0, Math.max(0, MAX_IMAGES - attachments.length));
+    setAttachments((current) => [
+      ...current,
+      ...room.map((file, index) => ({
+        key: `${Date.now()}-${index}-${file.name}`,
+        file,
+        preview: URL.createObjectURL(file),
+      })),
+    ]);
+    if (fileRef.current) fileRef.current.value = "";
+  }
+
+  function detach(key: string) {
+    setAttachments((current) => {
+      const removed = current.find((a) => a.key === key);
+      if (removed) URL.revokeObjectURL(removed.preview);
+      return current.filter((a) => a.key !== key);
+    });
+  }
+
   function send(event?: FormEvent) {
     event?.preventDefault();
     const content = input.trim();
-    if (!content || busy) return;
+    if ((!content && !attachments.length) || busy) return;
+    const photos = attachments;
     setInput("");
+    setAttachments([]);
     setEntries((current) => [
       ...current,
-      { kind: "message", key: `local-${Date.now()}`, role: "user", content },
+      {
+        kind: "message",
+        key: `local-${Date.now()}`,
+        role: "user",
+        content,
+        images: photos.map((photo) => ({ url: photo.preview })),
+      },
     ]);
     run(async () => {
+      // Photos upload first; the message then refers to them by id.
+      const imageIds: string[] = [];
+      for (const photo of photos) {
+        const form = new FormData();
+        form.append("image", photo.file);
+        imageIds.push(
+          (await uploadApi<{ id: string }>("/assistant/images", form)).id,
+        );
+      }
       let id = conversationId;
       if (!id) {
         id = (await api.post<{ id: string }>("/assistant/conversations")).id;
@@ -226,7 +303,10 @@ export function AssistantPanel() {
         remember(id);
       }
       await consume(
-        streamApi(`/assistant/conversations/${id}/messages`, { content }),
+        streamApi(
+          `/assistant/conversations/${id}/messages`,
+          imageIds.length ? { content, image_ids: imageIds } : { content },
+        ),
       );
     });
   }
@@ -254,6 +334,7 @@ export function AssistantPanel() {
     remember(null);
     setConversationId(null);
     setEntries([]);
+    setAttachments([]);
     setError("");
   }
 
@@ -328,6 +409,19 @@ export function AssistantPanel() {
                       : "bg-muted",
                   )}
                 >
+                  {!!entry.images?.length && (
+                    <div className="mb-1.5 flex flex-wrap gap-1.5">
+                      {entry.images.map((image) => (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          key={image.url}
+                          src={image.url}
+                          alt={t("photo")}
+                          className="h-20 w-20 rounded-lg object-cover"
+                        />
+                      ))}
+                    </div>
+                  )}
                   {entry.content}
                 </div>
               ) : (
@@ -356,7 +450,51 @@ export function AssistantPanel() {
               </p>
             )}
           </div>
+          {!!attachments.length && (
+            <div
+              className="flex gap-2 border-t px-3 pt-3"
+              data-testid="assistant-attachments"
+            >
+              {attachments.map((attachment) => (
+                <div key={attachment.key} className="relative">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={attachment.preview}
+                    alt={attachment.file.name}
+                    className="h-14 w-14 rounded-md object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => detach(attachment.key)}
+                    className="absolute -right-1.5 -top-1.5 rounded-full bg-background p-0.5 shadow"
+                    aria-label={t("removeImage")}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
           <form onSubmit={send} className="flex items-end gap-2 border-t p-3">
+            <input
+              ref={fileRef}
+              type="file"
+              accept={ACCEPTED_IMAGE_INPUT}
+              multiple
+              hidden
+              data-testid="assistant-file"
+              onChange={(e) => attach(e.target.files)}
+            />
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              disabled={busy || attachments.length >= MAX_IMAGES}
+              onClick={() => fileRef.current?.click()}
+              aria-label={t("attach")}
+            >
+              <ImagePlus className="h-4 w-4" />
+            </Button>
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -379,7 +517,7 @@ export function AssistantPanel() {
             <Button
               type="submit"
               size="icon"
-              disabled={busy || !input.trim()}
+              disabled={busy || (!input.trim() && !attachments.length)}
               aria-label={t("send")}
             >
               <Send className="h-4 w-4" />
@@ -401,9 +539,16 @@ function ActionCard({
   onDecide: (verb: "confirm" | "reject" | "undo") => void;
 }) {
   const t = useTranslations("assistant");
+  const applied = action.status === "applied";
   const reportId =
-    action.status === "applied" && typeof action.result?.id === "string"
-      ? action.result.id
+    applied && typeof action.result?.id === "string" ? action.result.id : null;
+  const itemId =
+    applied && typeof action.result?.item_id === "string"
+      ? action.result.item_id
+      : null;
+  const thumbnail =
+    itemId && typeof action.result?.thumbnail_url === "string"
+      ? action.result.thumbnail_url
       : null;
   return (
     <div
@@ -418,14 +563,24 @@ function ActionCard({
       <p className="text-xs font-medium text-muted-foreground">
         {t("status." + action.status)}
       </p>
-      <p
-        className={cn(
-          "mt-1 leading-6",
-          action.status === "undone" && "line-through",
+      <div className="mt-1 flex items-center gap-2">
+        {thumbnail && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={thumbnail}
+            alt=""
+            className="h-10 w-10 shrink-0 rounded-md object-cover"
+          />
         )}
-      >
-        {action.summary}
-      </p>
+        <p
+          className={cn(
+            "leading-6",
+            action.status === "undone" && "line-through",
+          )}
+        >
+          {action.summary}
+        </p>
+      </div>
       <div className="mt-2 flex flex-wrap gap-2">
         {action.status === "pending" && (
           <>
@@ -466,6 +621,15 @@ function ActionCard({
               href={`/dashboard/body-styling?report=${encodeURIComponent(reportId)}`}
             >
               {t("openReport")}
+            </Link>
+          </Button>
+        )}
+        {itemId && (
+          <Button asChild type="button" size="sm" variant="ghost">
+            <Link
+              href={`/dashboard/wardrobe?item=${encodeURIComponent(itemId)}`}
+            >
+              {t("openItem")}
             </Link>
           </Button>
         )}

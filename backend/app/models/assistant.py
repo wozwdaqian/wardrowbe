@@ -81,3 +81,25 @@ class AssistantAction(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )
+
+
+class AssistantImage(Base):
+    """A photo the user attached to the chat; linked to its message once that is sent."""
+
+    __tablename__ = "assistant_images"
+    __table_args__ = (Index("ix_assistant_image_message", "message_id"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    message_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("assistant_messages.id", ondelete="CASCADE")
+    )
+    image_path: Mapped[str] = mapped_column(String(500), nullable=False)
+    medium_path: Mapped[str] = mapped_column(String(500), nullable=False)
+    thumbnail_path: Mapped[str] = mapped_column(String(500), nullable=False)
+    image_hash: Mapped[str | None] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )

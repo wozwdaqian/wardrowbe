@@ -1,4 +1,9 @@
-from app.models.assistant import AssistantAction, AssistantConversation, AssistantMessage
+from app.models.assistant import (
+    AssistantAction,
+    AssistantConversation,
+    AssistantImage,
+    AssistantMessage,
+)
 from app.models.body_styling import BodyStyleRecommendation
 from app.models.family import Family, FamilyInvite
 from app.models.identity import UserIdentity
@@ -18,6 +23,7 @@ from app.models.user import User
 __all__ = [
     "AssistantAction",
     "AssistantConversation",
+    "AssistantImage",
     "AssistantMessage",
     "BodyStyleRecommendation",
     "Family",

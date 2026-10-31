@@ -750,14 +750,17 @@ class AIService:
             "endpoints": endpoints_health,
         }
 
-    async def chat(self, messages: list[dict], tools: list[dict] | None = None) -> dict:
+    async def chat(
+        self, messages: list[dict], tools: list[dict] | None = None, vision: bool = False
+    ) -> dict:
         """One chat turn with optional OpenAI-style tools, using the text model.
 
+        `vision` switches to the vision model, for conversations that carry images.
         Returns {"message": <assistant message, possibly with tool_calls>, "model": str}.
         Endpoint failover, retries and the reasoning_effort fallback are shared with tagging.
         """
         result, error, _ = await self._call_with_fallback(
-            messages, "chat", use_vision_model=False, tools=tools, full_message=True
+            messages, "chat", use_vision_model=vision, tools=tools, full_message=True
         )
         if result is None:
             raise error or RuntimeError("Chat failed - no endpoints available")

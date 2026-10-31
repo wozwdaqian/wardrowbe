@@ -80,6 +80,32 @@ async function fetchApi<T>(endpoint: string, options: FetchOptions = {}): Promis
   return response.json();
 }
 
+// POSTs multipart form data; the browser sets the boundary, so no Content-Type here.
+export async function uploadApi<T>(endpoint: string, body: FormData): Promise<T> {
+  const headers: Record<string, string> = {};
+  if (accessToken) {
+    headers['Authorization'] = `Bearer ${accessToken}`;
+  }
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_PATH}${endpoint}`, {
+      method: 'POST',
+      headers,
+      body,
+      credentials: 'include',
+    });
+  } catch {
+    throw new NetworkError('Unable to connect to server. Please try again.');
+  }
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    const message = (typeof data.detail === 'string' ? data.detail : data.detail?.message)
+      || 'An error occurred';
+    throw new ApiError(message, response.status, data);
+  }
+  return response.json();
+}
+
 export type StreamEvent = { type: string; [key: string]: unknown };
 
 // POSTs JSON and yields each server-sent event's `data:` payload as it arrives.

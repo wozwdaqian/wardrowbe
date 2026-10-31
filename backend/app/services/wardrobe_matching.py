@@ -202,3 +202,63 @@ def wardrobe_match(result: dict, items: list, profile: StylingProfile) -> dict:
         "outfits": outfits,
         "suggestions": suggestions[:2],
     }
+
+
+def purchase_fit(
+    items: list, profile: StylingProfile, item_type: str, color: str, material: str | None
+) -> dict:
+    """How a garment the user is considering fits their profile and the wardrobe they own.
+
+    Hard avoidances come from the profile; `similar_owned` flags a near-duplicate; `adds` is
+    how many more top x bottom x shoes combinations it would make; `pairs_with` lists owned
+    items for the other core roles so the model can reason about colors.
+    """
+    from types import SimpleNamespace
+
+    from app.utils.garment_vocabulary import ITEM_ROLE
+
+    candidate = SimpleNamespace(type=item_type, primary_color=color, material=material)
+    avoided = []
+    if (code := item_material_code(candidate)) and code in blocked_materials(profile):
+        avoided.append(f"material:{material}")
+    if (family := item_color_family(candidate)) and family in profile.avoided_color_families:
+        avoided.append(f"color:{color}")
+    usable = [item for item in items if not avoided_by_profile(item, profile)]
+    role_counts: dict[str, int] = {}
+    for item in usable:
+        if role := ITEM_ROLE.get(item.type):
+            role_counts[role] = role_counts.get(role, 0) + 1
+    role = ITEM_ROLE.get(item_type)
+    base = combinations(role_counts)
+    adds = (
+        combinations({**role_counts, role: role_counts.get(role, 0) + 1}) - base
+        if role in CORE_ROLES
+        else 0
+    )
+
+    def brief(item) -> dict:
+        return {
+            "id": str(item.id),
+            "name": item.name,
+            "type": item.type,
+            "color": item.primary_color,
+        }
+
+    similar = [
+        item
+        for item in usable
+        if item.type == item_type and item_color_family(item) == item_color_family(candidate)
+    ]
+    pairs = {
+        other: [brief(item) for item in usable if ITEM_ROLE.get(item.type) == other][:6]
+        for other in (*CORE_ROLES, "outer_layer")
+        if other != role
+    }
+    return {
+        "role": role,
+        "avoided_by_profile": avoided,
+        "similar_owned": [brief(item) for item in similar[:3]],
+        "wardrobe_combinations": base,
+        "adds_combinations": adds,
+        "pairs_with": pairs,
+    }

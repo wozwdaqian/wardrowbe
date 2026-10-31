@@ -11,14 +11,18 @@ account deletion and family management are deliberately not exposed.
 
 import json
 from dataclasses import dataclass
+from dataclasses import field as dataclass_field
 from datetime import UTC, date, datetime, timedelta
 from typing import Any, Literal
 from uuid import UUID
 
+from arq import create_pool
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import get_settings
+from app.models.assistant import AssistantImage
 from app.models.body_styling import BodyStyleRecommendation
 from app.models.item import ClothingItem, ItemHistory
 from app.models.user import User
@@ -28,7 +32,13 @@ from app.schemas.body_styling import (
     OutfitFeedback,
     ReportFeedback,
 )
-from app.schemas.styling_profile import StylingProfile, styling_revision
+from app.schemas.item import ItemCreate
+from app.schemas.styling_profile import (
+    CATALOG,
+    PROFILE_CATALOGS,
+    StylingProfile,
+    styling_revision,
+)
 from app.services.body_style_editing import (
     EditError,
     garment_index_for,
@@ -44,10 +54,15 @@ from app.services.body_styling_service import (
     generate_rule_based_style,
     recent_style_feedback,
 )
+from app.services.image_service import ImageService
 from app.services.item_service import ItemService
-from app.services.wardrobe_matching import wardrobe_match
+from app.services.wardrobe_matching import purchase_fit, wardrobe_match
 from app.utils.body_measurements import body_revision
+from app.utils.garment_vocabulary import COLORS, MATERIALS, TYPES
+from app.utils.signed_urls import sign_optional
 from app.utils.timezone import get_user_today
+from app.workers.queues import TAGGING_QUEUE
+from app.workers.settings import get_redis_settings
 
 Kind = Literal["read", "direct", "confirm"]
 MEASUREMENT_KEYS = (
@@ -72,6 +87,8 @@ class ToolContext:
     user: User
     endpoints: list[dict]
     ai_available: bool
+    # Callbacks run after the tool's transaction commits (e.g. queueing a worker job).
+    after_commit: list = dataclass_field(default_factory=list)
 
     @property
     def zh(self) -> bool:
@@ -539,6 +556,116 @@ async def undo_wear(ctx: ToolContext, undo: dict) -> None:
     )
 
 
+class AddItemArgs(Args):
+    image_id: str = Field(description="id of an image the user attached in this conversation")
+    type: Literal[*TYPES]
+    primary_color: Literal[*COLORS] | None = None
+    material: Literal[*MATERIALS] | None = None
+    name: str | None = Field(None, max_length=100, description="short name, e.g. 藏青牛津纺衬衫")
+
+
+async def own_image(ctx: ToolContext, image_id: str) -> AssistantImage:
+    try:
+        key = UUID(image_id)
+    except ValueError:
+        raise ToolError("image_id must be the id of an attached image") from None
+    image = await ctx.db.scalar(
+        select(AssistantImage).where(
+            AssistantImage.id == key, AssistantImage.user_id == ctx.user.id
+        )
+    )
+    if image is None:
+        raise ToolError("no attached image with this id")
+    return image
+
+
+async def queue_tagging(item_id: UUID, image_path: str) -> None:
+    redis = await create_pool(get_redis_settings())
+    try:
+        await redis.enqueue_job(
+            "tag_item_image", str(item_id), image_path, _queue_name=TAGGING_QUEUE
+        )
+    finally:
+        await redis.aclose()
+
+
+async def add_wardrobe_item(ctx: ToolContext, args: AddItemArgs) -> Outcome:
+    image = await own_image(ctx, args.image_id)
+    images = ImageService()
+    service = ItemService(ctx.db)
+    # The item gets its own copy, so deleting either the chat or the item keeps the other intact.
+    original = images.get_image_path(image.image_path).read_bytes()
+    paths = await images.process_and_store(ctx.user.id, original, "assistant.jpg")
+    existing = await service.find_duplicate_by_hash(ctx.user.id, paths["image_hash"])
+    if existing is not None:
+        images.delete_images({k: v for k, v in paths.items() if k != "image_hash"})
+        raise ToolError(
+            f"this photo is already in the wardrobe as {existing.name or existing.type}"
+        )
+    color = args.primary_color
+    item = await service.create(
+        ctx.user.id,
+        ItemCreate(
+            type=args.type, name=args.name, primary_color=color, colors=[color] if color else None
+        ),
+        paths,
+    )
+    if args.material:
+        item.material = args.material
+    if get_settings().effective_ai_vision_enabled:
+        # The worker reads the row from its own connection, so it is queued after the commit.
+        full_path = str(images.get_image_path(paths["image_path"]))
+        ctx.after_commit.append(lambda: queue_tagging(item.id, full_path))
+    else:
+        item = await service.mark_pending(item, set_ready=True)
+    await ctx.db.flush()
+    label = args.name or args.type
+    return Outcome(
+        result={
+            "item_id": str(item.id),
+            "name": item.name,
+            "type": item.type,
+            "thumbnail_url": sign_optional(item.thumbnail_path, item.image_path),
+        },
+        summary=ctx.text(f"已加入衣橱：{label}", f"Added to the wardrobe: {label}"),
+        undo={"item_id": str(item.id)},
+    )
+
+
+async def undo_add_item(ctx: ToolContext, undo: dict) -> None:
+    item = await ItemService(ctx.db).get_by_id(UUID(undo["item_id"]), ctx.user.id)
+    if item is None:
+        raise ToolError("the item is no longer in the wardrobe")
+    if item.wear_count:
+        raise ToolError("the item has been worn since; remove it from the wardrobe page instead")
+    ImageService().delete_images(
+        {
+            "image_path": item.image_path,
+            "thumbnail_path": item.thumbnail_path,
+            "medium_path": item.medium_path,
+        }
+    )
+    await ItemService(ctx.db).delete(item)
+
+
+class AssessArgs(Args):
+    type: Literal[*TYPES]
+    primary_color: Literal[*COLORS]
+    material: Literal[*MATERIALS] | None = None
+
+
+async def assess_purchase(ctx: ToolContext, args: AssessArgs) -> dict:
+    items = (
+        await ctx.db.scalars(
+            select(ClothingItem).where(
+                ClothingItem.user_id == ctx.user.id, ClothingItem.is_archived.is_(False)
+            )
+        )
+    ).all()
+    profile = StylingProfile.model_validate(ctx.user.styling_profile or {})
+    return purchase_fit(items, profile, args.type, args.primary_color, args.material)
+
+
 # ---------------------------------------------------------------- tools that need confirmation
 
 
@@ -590,6 +717,18 @@ def shown(value) -> str:
     return format(value, "g") if isinstance(value, float) else str(value)
 
 
+def profile_value(key: str, value, zh: bool) -> str:
+    """Catalog codes ("wool") are shown by their names ("羊毛"), lists joined."""
+    if value in (None, "", []):
+        return "—"
+    if key not in PROFILE_CATALOGS:
+        return str(value)
+    vocabulary = CATALOG[PROFILE_CATALOGS[key]]
+    values = value if isinstance(value, list) else [value]
+    names = (vocabulary.get(v, {}).get("zh" if zh else "en", v) for v in values)
+    return ("、" if zh else ", ").join(names)
+
+
 async def propose_profile(ctx: ToolContext, args: ProfileArgs) -> tuple[str, dict]:
     measurements, profile = merged_profile(ctx.user, args)
     old_m = ctx.user.body_measurements or {}
@@ -605,7 +744,10 @@ async def propose_profile(ctx: ToolContext, args: ProfileArgs) -> tuple[str, dic
     for key in sorted(set(old_p) | set(profile)):
         if old_p.get(key) != profile.get(key):
             label = FACT_NAMES.get(key, (key, key))[index]
-            lines.append(f"{label}: {old_p.get(key) or '—'} → {profile.get(key) or '—'}")
+            before, after = (
+                profile_value(key, v, ctx.zh) for v in (old_p.get(key), profile.get(key))
+            )
+            lines.append(f"{label}: {before} → {after}")
     if not lines:
         raise ToolError("these values are already saved")
     stored = {
@@ -614,7 +756,7 @@ async def propose_profile(ctx: ToolContext, args: ProfileArgs) -> tuple[str, dic
             ctx.user.body_measurements, ctx.user.styling_profile
         ),
     }
-    return ctx.text("修改资料：", "Update profile: ") + "; ".join(lines), stored
+    return ctx.text("更新资料：", "Updated profile: ") + "; ".join(lines), stored
 
 
 async def apply_profile(ctx: ToolContext, args: dict) -> Outcome:
@@ -645,6 +787,13 @@ async def apply_profile(ctx: ToolContext, args: dict) -> Outcome:
             "revision_after": styling_revision(measurements, profile),
         },
     )
+
+
+async def update_profile(ctx: ToolContext, args: ProfileArgs) -> Outcome:
+    summary, stored = await propose_profile(ctx, args)
+    outcome = await apply_profile(ctx, stored)
+    outcome.summary = summary
+    return outcome
 
 
 async def undo_profile(ctx: ToolContext, undo: dict) -> None:
@@ -807,12 +956,30 @@ TOOLS: dict[str, Tool] = {
             undo=undo_wear,
         ),
         Tool(
+            "assess_purchase",
+            "read",
+            "Check a garment the user is considering (e.g. from a shop photo) against their "
+            "profile's avoidances and their wardrobe: near-duplicates, owned items it pairs with, "
+            "and how many more outfits it would make.",
+            AssessArgs,
+            assess_purchase,
+        ),
+        Tool(
+            "add_wardrobe_item",
+            "direct",
+            "Add the single garment shown in an attached photo to the wardrobe (undoable). "
+            "Use only when the user asks to add it.",
+            AddItemArgs,
+            add_wardrobe_item,
+            undo=undo_add_item,
+        ),
+        Tool(
             "update_profile",
-            "confirm",
-            "Propose changes to body measurements or the styling profile; the user must confirm.",
+            "direct",
+            "Save changes to body measurements or the styling profile (undoable). Use it whenever "
+            "the user states a new value, even in passing.",
             ProfileArgs,
-            apply_profile,
-            propose=propose_profile,
+            update_profile,
             undo=undo_profile,
         ),
         Tool(

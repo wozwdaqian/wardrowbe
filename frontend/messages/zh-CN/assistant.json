@@ -1,7 +1,7 @@
 {
   "open": "穿搭助手",
   "title": "穿搭助手",
-  "intro": "可以问我穿搭问题，或者让我帮你改资料、换掉某一套、记录反馈。改资料和删除会先请你确认，其他改动都能撤销。",
+  "intro": "可以问我穿搭问题，也可以发照片：点评今天的穿搭、把衣服加进衣橱，或者帮你看看想买的单品。你提到身材或偏好有变化时，我会直接更新资料。删除报告会先请你确认，其他改动都能撤销。",
   "placeholder": "例如：明天去朋友婚礼，北京降温",
   "send": "发送",
   "newChat": "新对话",
@@ -23,7 +23,9 @@
     "ai_failed": "模型暂时没有回应，请稍后再试。",
     "rate": "发得太快了，请稍等一分钟。",
     "action": "操作没有成功：{message}",
-    "generic": "出了点问题，请重试。"
+    "generic": "出了点问题，请重试。",
+    "imageTooLarge": "照片太大了，请换一张小一点的。",
+    "imageInvalid": "无法读取这张照片，支持 JPEG、PNG、WebP、HEIC。"
   },
   "prompts": {
     "explain": "解释一下我最新的这份报告",
@@ -45,7 +47,14 @@
     "replace_garment": "替换单品",
     "set_feedback": "记录反馈",
     "log_wear": "记录穿着",
-    "update_profile": "修改资料",
-    "delete_report": "删除报告"
-  }
+    "update_profile": "更新资料",
+    "delete_report": "删除报告",
+    "assess_purchase": "购买参考",
+    "add_wardrobe_item": "加入衣橱"
+  },
+  "attach": "添加照片",
+  "removeImage": "移除这张照片",
+  "photo": "照片",
+  "imageLimit": "一次最多 {count} 张照片",
+  "openItem": "查看单品"
 }

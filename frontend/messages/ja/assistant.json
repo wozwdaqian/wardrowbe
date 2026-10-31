@@ -1,7 +1,7 @@
 {
   "open": "Styling assistant",
   "title": "Styling assistant",
-  "intro": "Ask me about outfits, or have me update your profile, rework a look or record feedback. Profile edits and deletions wait for your confirmation; everything else can be undone.",
+  "intro": "Ask me about outfits, or send a photo: I can review what you're wearing, add a garment to your wardrobe or check something you're thinking of buying. When you mention a new measurement or preference I save it to your profile. Deleting a report waits for your confirmation; everything else can be undone.",
   "placeholder": "e.g. A friend's wedding tomorrow, and it's getting cold",
   "send": "Send",
   "newChat": "New chat",
@@ -23,7 +23,9 @@
     "ai_failed": "The model did not respond. Please try again.",
     "rate": "Too many messages; please wait a minute.",
     "action": "That did not work: {message}",
-    "generic": "Something went wrong. Please try again."
+    "generic": "Something went wrong. Please try again.",
+    "imageTooLarge": "That photo is too large; please pick a smaller one.",
+    "imageInvalid": "Couldn't read that photo. JPEG, PNG, WebP and HEIC are supported."
   },
   "prompts": {
     "explain": "Explain my latest report",
@@ -46,6 +48,13 @@
     "set_feedback": "saving feedback",
     "log_wear": "logging wear",
     "update_profile": "profile change",
-    "delete_report": "deleting a report"
-  }
+    "delete_report": "deleting a report",
+    "assess_purchase": "Purchase check",
+    "add_wardrobe_item": "Add to wardrobe"
+  },
+  "attach": "Add photos",
+  "removeImage": "Remove this photo",
+  "photo": "Photo",
+  "imageLimit": "Up to {count} photos at a time",
+  "openItem": "View item"
 }
