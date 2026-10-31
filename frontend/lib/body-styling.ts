@@ -35,12 +35,9 @@ export function catalogLabel(
   return entries[value]?.[locale.startsWith("zh") ? "zh" : "en"] || value;
 }
 export type FabricSpec = {
-  [K in
-    | "construction"
-    | "weight"
-    | "drape"
-    | "sheen"
-    | "stretch"]: keyof (typeof catalog)[K];
+  [
+    K in "construction" | "weight" | "drape" | "sheen" | "stretch"
+  ]: keyof (typeof catalog)[K];
 };
 export type StyleExplanation = { text: string; evidence: FactId[] };
 export type ColorPlan = {
@@ -57,11 +54,7 @@ export type OutfitFeedback = {
 export type ReportFeedback = { outfits: OutfitFeedback[] };
 
 export type Goal =
-  | "balance"
-  | "elongate_legs"
-  | "midsection"
-  | "shoulders"
-  | "comfort";
+  "balance" | "elongate_legs" | "midsection" | "shoulders" | "comfort";
 export type Context = {
   occasion: "daily" | "work" | "date" | "weekend" | "formal";
   style: "minimal" | "smart_casual" | "street" | "sporty" | "classic";
@@ -91,40 +84,51 @@ export type FactId =
   | "waist_chest_ratio"
   | "waist_hips_ratio"
   | "inseam_height_ratio"
-  | PersonalFactId;
+  | PersonalFactId
+  | RuleId;
+export type RuleId =
+  `rule_${"top_length" | "trouser_rise" | "trouser_leg" | "outerwear" | "season" | "occasion"}`;
 export type PersonalFactId = keyof StylingProfile | "previous_feedback";
 export type Fact = {
   id: FactId;
   value: number | string | string[];
   unit: "cm" | "kg" | "ratio" | "self_report";
 };
+export const GARMENT_KINDS = {
+  top: [
+    "tshirt",
+    "polo",
+    "shirt",
+    "turtleneck",
+    "knit",
+    "sweatshirt",
+    "cardigan",
+    "vest",
+  ],
+  bottom: ["trousers", "chinos", "jeans", "shorts"],
+  shoes: ["sneakers", "loafers", "boots", "derbies", "oxfords", "sandals"],
+  outerwear: [
+    "blazer",
+    "suit_jacket",
+    "jacket",
+    "overshirt",
+    "coat",
+    "trench",
+    "down_jacket",
+  ],
+  accessory: ["scarf", "belt", "bag", "cap", "tie", "watch", "glasses"],
+} as const;
+export type GarmentKind =
+  (typeof GARMENT_KINDS)[keyof typeof GARMENT_KINDS][number];
 export type Garment = {
   slot: "top" | "bottom" | "shoes" | "outerwear" | "accessory";
-  kind:
-    | "tshirt"
-    | "polo"
-    | "shirt"
-    | "knit"
-    | "sweatshirt"
-    | "trousers"
-    | "jeans"
-    | "shorts"
-    | "sneakers"
-    | "loafers"
-    | "boots"
-    | "derbies"
-    | "blazer"
-    | "jacket"
-    | "coat"
-    | "scarf"
-    | "belt"
-    | "bag"
-    | "cap";
+  kind: GarmentKind;
   color: string;
   color_name: string;
   fit: "slim" | "regular" | "relaxed" | "wide";
   length: "short" | "regular" | "long";
   rise: "low" | "mid" | "high" | null;
+  pattern?: keyof typeof catalog.patterns;
   material: string;
   description: string;
   material_code?: MaterialCode | null;
@@ -151,6 +155,9 @@ export type BodyStyleReport = {
   id: string;
   created_at: string;
   model: string;
+  mode?: "ai" | "rules";
+  status?: "pending" | "done" | "failed";
+  error_code?: string | null;
   input_snapshot: {
     measurements: Record<string, number | string>;
     context: Context;
@@ -158,7 +165,7 @@ export type BodyStyleReport = {
     contract_version?: number;
   };
   facts: Fact[];
-  result: {
+  result: null | {
     summary: string;
     observations: Observation[];
     fit_advice: FitAdvice[];
@@ -172,8 +179,10 @@ export type BodyStyleReport = {
 export type HistoryEntry = {
   id: string;
   created_at: string;
-  summary: string;
+  summary: string | null;
   context: Context;
+  mode?: "ai" | "rules";
+  status?: "pending" | "done" | "failed";
 };
 export type BodyStyleHistory = {
   items: HistoryEntry[];

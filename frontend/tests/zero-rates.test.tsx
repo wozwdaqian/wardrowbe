@@ -37,6 +37,8 @@ vi.mock('@/lib/hooks/use-notifications', () => ({
 }))
 vi.mock('@/lib/hooks/use-family', () => ({ useFamily: () => ({ data: null, isLoading: false }) }))
 vi.mock('@/lib/hooks/use-user', () => ({ useUserTimezone: () => 'UTC' }))
+// Fetches its own data; covered by today-outfit-card.test.tsx.
+vi.mock('@/components/body-styling/today-outfit-card', () => ({ TodayOutfitCard: () => null }))
 
 const analytics = (acceptance: number | null, rating: number | null) => ({
   wardrobe: {

@@ -3,15 +3,19 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowRight,
   Check,
   CheckCircle2,
   Clock3,
+  ChevronDown,
   Loader2,
+  Luggage,
   Ruler,
   Sparkles,
+  Trash2,
 } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { queryKeys } from "@/lib/hooks/query-keys";
@@ -31,7 +35,17 @@ import {
 } from "@/components/ui/card";
 import { OutfitIllustration } from "@/components/body-styling/outfit-illustration";
 import { StylingProfileEditor } from "@/components/body-styling/styling-profile-editor";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { OutfitFeedback } from "@/components/body-styling/outfit-feedback";
+import {
+  GarmentWardrobeStatus,
+  WardrobeMatch,
+  WardrobeSuggestions,
+} from "@/components/body-styling/wardrobe-match";
 import {
   AIStatus,
   BodyStyleHistory,
@@ -76,6 +90,21 @@ const goalKeys: Goal[] = [
   "comfort",
 ];
 
+const KNOWN_ERRORS = [
+  "ai_unavailable",
+  "invalid_measurements",
+  "invalid_ai_response",
+  "ai_timeout",
+  "ai_failed",
+  "body_measurements_conflict",
+  "queue_failed",
+  "job_lost",
+  "report_not_ready",
+];
+type ReadyReport = BodyStyleReport & {
+  result: NonNullable<BodyStyleReport["result"]>;
+};
+
 export default function BodyStylingPage() {
   const t = useTranslations("bodyStyling");
   const locale = useLocale();
@@ -101,6 +130,9 @@ export default function BodyStylingPage() {
     params.get("report"),
   );
   const [offset, setOffset] = useState(0);
+  const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null);
+  const reportRef = useRef<HTMLElement>(null);
+  const scrollToReport = useRef(false);
   const [generating, setGenerating] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
@@ -127,7 +159,11 @@ export default function BodyStylingPage() {
       api.get<BodyStyleReport>("/body-styling/recommendations/" + selectedId),
     enabled: active && !!selectedId,
     retry: false,
-    staleTime: Infinity,
+    // A finished report never changes; a pending one is polled until the worker is done.
+    staleTime: (query) =>
+      query.state.data?.status === "pending" ? 0 : Infinity,
+    refetchInterval: (query) =>
+      query.state.data?.status === "pending" ? 3000 : false,
     meta: { toastsOwnErrors: true },
   });
 
@@ -172,19 +208,7 @@ export default function BodyStylingPage() {
       err instanceof ApiError
         ? (err.data as { detail?: { code?: string } })?.detail?.code
         : undefined;
-    return t(
-      "error." +
-        ([
-          "ai_unavailable",
-          "invalid_measurements",
-          "invalid_ai_response",
-          "ai_timeout",
-          "ai_failed",
-          "body_measurements_conflict",
-        ].includes(code || "")
-          ? code
-          : fallback),
-    );
+    return t("error." + (KNOWN_ERRORS.includes(code || "") ? code : fallback));
   };
   function changeMeasurement(key: string, value: string) {
     dirty.current = true;
@@ -265,16 +289,32 @@ export default function BodyStylingPage() {
       scroll: false,
     });
   }
-  async function generate() {
+  async function deleteReport(id: string) {
+    setConfirmingDelete(null);
+    try {
+      await api.delete("/body-styling/recommendations/" + id);
+    } catch (err) {
+      handleError(err, "delete");
+      return;
+    }
+    if (selectedId === id) {
+      setSelectedId(null);
+      router.replace("/dashboard/body-styling", { scroll: false });
+    }
+    queryClient.removeQueries({ queryKey: queryKeys.bodyStyling.report(id) });
+    await queryClient.invalidateQueries({
+      queryKey: queryKeys.bodyStyling.history.all,
+    });
+  }
+  async function generate(
+    mode: "auto" | "rules" = "auto",
+    request: Context = context,
+  ) {
     if (generationRequest.current) return;
     setError("");
     if (!validateMeasurements()) return;
-    if (!context.goals.length) {
+    if (!request.goals.length) {
       setError(t("goalRequired"));
-      return;
-    }
-    if (!status.data?.available) {
-      setError(t("error.ai_unavailable"));
       return;
     }
     setGenerating(true);
@@ -286,7 +326,8 @@ export default function BodyStylingPage() {
       const report = await api.post<BodyStyleReport>(
         "/body-styling/recommendations",
         {
-          ...context,
+          ...request,
+          mode,
           body_measurements_revision: updated.body_measurements_revision,
           styling_profile_revision: updated.styling_profile_revision,
         },
@@ -294,9 +335,12 @@ export default function BodyStylingPage() {
       );
       if (!mounted.current || controller.signal.aborted) return;
       queryClient.setQueryData(queryKeys.bodyStyling.report(report.id), report);
+      scrollToReport.current = true;
       openReport(report.id);
       setOffset(0);
-      await queryClient.invalidateQueries({ queryKey: queryKeys.bodyStyling.history.all });
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.bodyStyling.history.all,
+      });
     } catch (err) {
       if (!controller.signal.aborted) handleError(err);
     } finally {
@@ -334,7 +378,37 @@ export default function BodyStylingPage() {
       </div>
     );
   }
-  const report = detail.data;
+  const loaded = detail.data;
+  const report = loaded?.result ? (loaded as ReadyReport) : undefined;
+  const loadedStatus = loaded?.status;
+  const wardrobe = useQuery({
+    queryKey: queryKeys.bodyStyling.wardrobeMatch(report?.id || ""),
+    queryFn: () =>
+      api.get<WardrobeMatch>(
+        `/body-styling/recommendations/${report!.id}/wardrobe-match`,
+      ),
+    enabled: !!report,
+    meta: { toastsOwnErrors: true },
+  });
+  useEffect(() => {
+    if (loadedStatus && loadedStatus !== "pending") {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.bodyStyling.history.all,
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.bodyStyling.unread,
+      });
+    }
+  }, [loadedStatus, loaded?.id, queryClient]);
+  useEffect(() => {
+    if (report && scrollToReport.current) {
+      scrollToReport.current = false;
+      reportRef.current?.scrollIntoView?.({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  }, [report]);
   const dateLabel = (value: string) =>
     new Date(value).toLocaleString(locale, {
       year: "numeric",
@@ -359,6 +433,13 @@ export default function BodyStylingPage() {
         <p className="max-w-2xl text-sm leading-7 text-muted-foreground">
           {t("intro")}
         </p>
+        <Link
+          href="/dashboard/body-styling/packing"
+          className="inline-flex items-center gap-1.5 text-sm text-emerald-800 underline-offset-4 hover:underline dark:text-emerald-300"
+        >
+          <Luggage className="h-4 w-4" />
+          {t("packing.open")}
+        </Link>
       </header>
 
       {status.isError ? (
@@ -493,15 +574,30 @@ export default function BodyStylingPage() {
                   <p className="text-xs leading-6 text-muted-foreground">
                     {t("measurementHelp")}
                   </p>
-                  <StylingProfileEditor
-                    value={stylingProfile}
-                    onChange={(value) => {
-                      dirty.current = true;
-                      setStylingProfile(value);
-                      setSaved(false);
-                      setError("");
-                    }}
-                  />
+                  <Collapsible className="rounded-lg border">
+                    <CollapsibleTrigger className="group flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left text-sm font-medium">
+                      <span>{t("personalSection")}</span>
+                      <span className="flex items-center gap-1.5 text-xs font-normal text-muted-foreground">
+                        {t("personalFilled", {
+                          count: Object.values(stylingProfile).filter((v) =>
+                            Array.isArray(v) ? v.length > 0 : !!v,
+                          ).length,
+                        })}
+                        <ChevronDown className="h-4 w-4" />
+                      </span>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="border-t px-3 pb-3">
+                      <StylingProfileEditor
+                        value={stylingProfile}
+                        onChange={(value) => {
+                          dirty.current = true;
+                          setStylingProfile(value);
+                          setSaved(false);
+                          setError("");
+                        }}
+                      />
+                    </CollapsibleContent>
+                  </Collapsible>
                   <Button type="submit" variant="outline" className="w-full">
                     {updateProfile.isPending ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -590,13 +686,8 @@ export default function BodyStylingPage() {
               <Button
                 type="button"
                 className="min-h-11 w-full bg-emerald-800 text-white hover:bg-emerald-900"
-                disabled={
-                  generating ||
-                  updateProfile.isPending ||
-                  !profile ||
-                  !status.data?.available
-                }
-                onClick={generate}
+                disabled={generating || updateProfile.isPending || !profile}
+                onClick={() => generate()}
               >
                 {generating ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -606,10 +697,22 @@ export default function BodyStylingPage() {
                 {generating ? t("generating") : t("generate")}
               </Button>
               {status.data?.available && (
-                <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
-                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                  {t("aiReady")}
-                </p>
+                <>
+                  <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                    {t("aiReady")}
+                  </p>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="w-full"
+                    disabled={generating || updateProfile.isPending || !profile}
+                    onClick={() => generate("rules")}
+                  >
+                    {t("generateRules")}
+                  </Button>
+                </>
               )}
             </CardContent>
           </Card>
@@ -629,10 +732,51 @@ export default function BodyStylingPage() {
               <p className="text-sm leading-6">{t("generatingNote")}</p>
             </div>
           )}
-          {detail.isFetching && (
+          {detail.isFetching && !loaded && (
             <p className="text-sm text-muted-foreground">
               {t("reportLoading")}
             </p>
+          )}
+          {loaded?.status === "pending" && (
+            <div
+              role="status"
+              className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50/40 p-5 dark:border-emerald-900 dark:bg-emerald-950/20"
+              data-testid="report-pending"
+            >
+              <Loader2 className="mt-1 h-5 w-5 shrink-0 animate-spin text-emerald-700" />
+              <div>
+                <p className="text-sm font-semibold">{t("pendingTitle")}</p>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                  {t("pendingNote")}
+                </p>
+              </div>
+            </div>
+          )}
+          {loaded?.status === "failed" && (
+            <div
+              role="alert"
+              className="space-y-3 rounded-xl border border-destructive/30 bg-destructive/5 p-5"
+              data-testid="report-failed"
+            >
+              <p className="text-sm font-semibold">{t("failedTitle")}</p>
+              <p className="text-sm text-destructive">
+                {t(
+                  "error." +
+                    (KNOWN_ERRORS.includes(loaded.error_code || "")
+                      ? loaded.error_code
+                      : "ai_failed"),
+                )}
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={generating}
+                onClick={() => generate("auto", loaded.input_snapshot.context)}
+              >
+                {t("retry")}
+              </Button>
+            </div>
           )}
           {detail.isError && (
             <p
@@ -668,12 +812,24 @@ export default function BodyStylingPage() {
             </div>
           )}
           {report && (
-            <section className="space-y-6" data-testid="body-style-report">
+            <section
+              ref={reportRef}
+              className="scroll-mt-20 space-y-6"
+              data-testid="body-style-report"
+            >
               <Card>
                 <CardHeader>
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <CardTitle className="text-xl">{t("analysis")}</CardTitle>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                      {report.mode === "rules" && (
+                        <span
+                          className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200"
+                          data-testid="rules-badge"
+                        >
+                          {t("rulesBadge")}
+                        </span>
+                      )}
                       {dateLabel(report.created_at)}
                     </span>
                   </div>
@@ -810,9 +966,9 @@ export default function BodyStylingPage() {
                               className="flex h-4 overflow-hidden rounded-full border"
                               aria-hidden="true"
                             >
-                              {outfit.garments.map((garment) => (
+                              {outfit.garments.map((garment, index) => (
                                 <span
-                                  key={garment.slot}
+                                  key={index}
                                   className="flex-1"
                                   style={{ backgroundColor: garment.color }}
                                 />
@@ -829,8 +985,8 @@ export default function BodyStylingPage() {
                           </div>
                         )}
                         <ul className="space-y-3">
-                          {outfit.garments.map((garment) => (
-                            <li key={garment.slot} className="flex gap-3">
+                          {outfit.garments.map((garment, garmentIndex) => (
+                            <li key={garmentIndex} className="flex gap-3">
                               <span
                                 aria-hidden="true"
                                 className="mt-1 h-4 w-4 shrink-0 rounded-full border border-black/15"
@@ -853,6 +1009,14 @@ export default function BodyStylingPage() {
                                     garment.rise
                                       ? t("rise." + garment.rise)
                                       : null,
+                                    garment.pattern &&
+                                    garment.pattern !== "solid"
+                                      ? catalogLabel(
+                                          "patterns",
+                                          garment.pattern,
+                                          locale,
+                                        )
+                                      : null,
                                     garment.material,
                                   ]
                                     .filter(Boolean)
@@ -874,6 +1038,13 @@ export default function BodyStylingPage() {
                                     {garment.fabric_reason}
                                   </p>
                                 )}
+                                <GarmentWardrobeStatus
+                                  match={
+                                    wardrobe.data?.outfits[index]?.garments[
+                                      garmentIndex
+                                    ]
+                                  }
+                                />
                               </div>
                             </li>
                           ))}
@@ -915,6 +1086,18 @@ export default function BodyStylingPage() {
                   ))}
                 </div>
               </div>
+              {wardrobe.data && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">
+                      {t("wardrobe.title")}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <WardrobeSuggestions match={wardrobe.data} />
+                  </CardContent>
+                </Card>
+              )}
             </section>
           )}
           <Card>
@@ -939,30 +1122,57 @@ export default function BodyStylingPage() {
                 </p>
               ) : (
                 history.data.items.map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => openReport(item.id)}
-                    className={
-                      "flex w-full items-center gap-3 rounded-xl border p-4 text-left transition-colors hover:bg-accent " +
-                      (selectedId === item.id
-                        ? "border-emerald-600 bg-emerald-50/40 dark:bg-emerald-950/20"
-                        : "")
-                    }
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs text-muted-foreground">
-                        {dateLabel(item.created_at)} ·{" "}
-                        {t("styles." + item.context.style)} ·{" "}
-                        {t("occasions." + item.context.occasion)}
-                      </p>
-                      <p className="mt-1 line-clamp-2 text-sm leading-6">
-                        {item.summary}
-                      </p>
-                    </div>
-                    <span className="sr-only">{t("historyView")}</span>
-                    <ArrowRight className="h-4 w-4 shrink-0" />
-                  </button>
+                  <div key={item.id} className="flex items-stretch gap-2">
+                    <button
+                      type="button"
+                      onClick={() => openReport(item.id)}
+                      className={
+                        "flex min-w-0 flex-1 items-center gap-3 rounded-xl border p-4 text-left transition-colors hover:bg-accent " +
+                        (selectedId === item.id
+                          ? "border-emerald-600 bg-emerald-50/40 dark:bg-emerald-950/20"
+                          : "")
+                      }
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs text-muted-foreground">
+                          {dateLabel(item.created_at)} ·{" "}
+                          {t("styles." + item.context.style)} ·{" "}
+                          {t("occasions." + item.context.occasion)}
+                        </p>
+                        <p className="mt-1 line-clamp-2 text-sm leading-6">
+                          {item.status === "pending"
+                            ? t("historyPending")
+                            : item.status === "failed"
+                              ? t("historyFailed")
+                              : item.summary}
+                        </p>
+                      </div>
+                      <span className="sr-only">{t("historyView")}</span>
+                      <ArrowRight className="h-4 w-4 shrink-0" />
+                    </button>
+                    {confirmingDelete === item.id ? (
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="h-auto self-stretch"
+                        onClick={() => deleteReport(item.id)}
+                      >
+                        {t("confirmDelete")}
+                      </Button>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-auto self-stretch"
+                        aria-label={t("deleteReport")}
+                        onClick={() => setConfirmingDelete(item.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
                 ))
               )}
               {!!history.data?.total && (

@@ -42,6 +42,19 @@ KINDS = {
     "belt": ("腰带", "belt"),
     "bag": ("包", "bag"),
     "cap": ("帽子", "cap"),
+    "turtleneck": ("高领衫", "turtleneck"),
+    "cardigan": ("开衫", "cardigan"),
+    "vest": ("马甲", "vest"),
+    "chinos": ("卡其裤", "chinos"),
+    "oxfords": ("牛津鞋", "oxfords"),
+    "sandals": ("凉鞋", "sandals"),
+    "suit_jacket": ("西装上衣", "suit jacket"),
+    "overshirt": ("衬衫夹克", "overshirt"),
+    "trench": ("风衣", "trench coat"),
+    "down_jacket": ("羽绒服", "down jacket"),
+    "tie": ("领带", "tie"),
+    "watch": ("手表", "watch"),
+    "glasses": ("眼镜", "glasses"),
 }
 MATERIALS = {
     "cotton": ("棉", "cotton"),
@@ -88,6 +101,35 @@ SHOULDERS = {
     "broad": ("偏宽", "broad"),
 }
 TOKEN = re.compile(r"\{\{([a-z_]+)\}\}")
+DIGITS = r"\d+(?:\.\d+)?"
+NUMBER = r"(?:\d+(?:\.\d+)?|[零一二三四五六七八九十百两〇点]+)"
+BODY_WORDS = (
+    r"身高|胸围|腰围|臀围|体重|内腿长|肩宽|大腿围|腰胸比|腰臀比|腿长比|"
+    r"\b(?:height|chest|waist|hips?|weight|inseam|shoulder width|thigh|ratio)\b"
+)
+# Digits are fine for tailoring ("show 1 cm of cuff", "roll twice", "outfit 2"), but never for
+# body data: weights, percentages, ratios, body-sized lengths, or numbers attached to a body word.
+BODY_NUMBERS = [
+    re.compile(NUMBER + r"\s*(?:kg|公斤|千克|斤|lbs?\b|磅|%|％)", re.I),
+    re.compile(r"(?<![\d.])0\.\d+"),
+    re.compile(
+        r"[零一二三四五六七八九两]*[十百千][零一二三四五六七八九十]*\s*(?:厘米|公分|cm)", re.I
+    ),
+    re.compile(r"(?<![\d.])(?:[2-9]\d|\d{3,})(?:\.\d+)?\s*(?:cm|厘米|公分|inch|英寸|寸)", re.I),
+    re.compile(
+        r"(?:"
+        + BODY_WORDS
+        + r")\s*(?:是|为|有|约|大约|达到|只有|[:：=]|is|of|at|about)?\s*"
+        + DIGITS,
+        re.I,
+    ),
+    re.compile(DIGITS + r"\s*(?:cm|厘米|公分|inch|英寸)?\s*的\s*(?:" + BODY_WORDS + r")", re.I),
+]
+# Garment vocabulary such as "fabric weight" or "check the inseam" is not a body claim.
+MISSING_CLAIMS = {
+    "inseam": r"内腿长|\byour inseam\b|\byou have an? .{0,12}inseam|\binseam (?:is|of)\b",
+    "weight": r"体重|\byour (?:body )?weight\b|\byou weigh\b|\bbody ?weight\b|\bweigh(?:s|ing)? (?:about )?\d",
+}
 COLORS.update({key: (value["zh"], value["en"]) for key, value in CATALOG["colors"].items()})
 MATERIALS.update({key: (value["zh"], value["en"]) for key, value in CATALOG["materials"].items()})
 FACT_NAMES.update(
@@ -131,18 +173,19 @@ def resolve_text(text: str, facts: list[BodyFact], evidence: list[str] | None, z
     known = {fact.id: fact for fact in facts}
     references = TOKEN.findall(text)
     plain = TOKEN.sub("", text)
-    if (
-        "{" in plain
-        or "}" in plain
-        or re.search(r"\d|[零一二三四五六七八九十百千万两〇点]+\s*(?:厘米|公分|公斤|千克|%)", plain)
-    ):
+    if "{" in plain or "}" in plain:
         raise ValueError("write measurements and ratios only as {{fact_id}} tokens; no raw numbers")
+    if any(pattern.search(plain) for pattern in BODY_NUMBERS):
+        raise ValueError(
+            "write body measurements and ratios only as {{fact_id}} tokens; "
+            "only small tailoring adjustments and counts may use digits"
+        )
     if any(
         ref not in known or (evidence is not None and ref not in evidence) for ref in references
     ):
         raise ValueError("fact tokens must exist in the input and in this entry's evidence")
     # Missing-data explanations are rendered by the server, outside model prose.
-    for key, terms in {"inseam": r"内腿长|裆长|\binseam\b", "weight": r"体重|\bweight\b"}.items():
+    for key, terms in MISSING_CLAIMS.items():
         if key not in known and re.search(terms, plain, re.I):
             raise ValueError(
                 "do not describe missing measurements; limitations are server-rendered"
@@ -187,6 +230,8 @@ def resolve_text(text: str, facts: list[BodyFact], evidence: list[str] | None, z
         if identifier not in known or identifier not in FACT_NAMES:
             raise ValueError("prose contains an unknown internal field name")
     keys = [key for key in known if zh or "_" in key]
+    if not keys:
+        return rendered
     pattern = r"\b(?:" + "|".join(re.escape(key) for key in keys) + r")\b"
     return re.sub(pattern, lambda match: FACT_NAMES[match[0]][0 if zh else 1], rendered)
 
@@ -202,6 +247,8 @@ def render_garment(garment: DraftGarment, zh: bool) -> dict:
             for key, value in garment.fabric.model_dump().items()
         ]
     parts = [color, material, KINDS[garment.kind][index]]
+    if garment.pattern != "solid":
+        parts.insert(1, CATALOG["patterns"][garment.pattern]["zh" if zh else "en"])
     if garment.slot not in {"shoes", "accessory"}:
         parts.append(FITS[garment.fit][index])
         if garment.slot == "bottom":

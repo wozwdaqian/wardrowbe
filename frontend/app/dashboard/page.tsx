@@ -42,6 +42,7 @@ import { toast } from 'sonner';
 import { formatShortDate } from '@/lib/utils';
 import { findNextSchedule } from '@/lib/schedules';
 import { useUserTimezone } from '@/lib/hooks/use-user';
+import { TodayOutfitCard } from '@/components/body-styling/today-outfit-card';
 
 function WeatherCard() {
   const { data: weather, isLoading, isError } = useWeather();
@@ -612,7 +613,6 @@ function QuickActionsCard() {
 export default function DashboardPage() {
   const { data: session } = useSession();
   const t = useTranslations('dashboard');
-  const tb = useTranslations('bodyStyling');
 
   return (
     <div className="space-y-6">
@@ -625,10 +625,7 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      <Card className="border-emerald-200 bg-emerald-50/50 dark:border-emerald-900 dark:bg-emerald-950/20">
-        <CardHeader><CardTitle>{tb('homeTitle')}</CardTitle><CardDescription>{tb('homeIntro')}</CardDescription></CardHeader>
-        <CardContent><Button asChild><Link href="/dashboard/body-styling"><Sparkles className="mr-2 h-4 w-4" />{tb('homeAction')}</Link></Button></CardContent>
-      </Card>
+      <TodayOutfitCard />
 
       {/* Top row - Weather + Pending + Next Scheduled */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

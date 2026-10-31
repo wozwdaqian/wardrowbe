@@ -1,7 +1,9 @@
 import asyncio
 import json
+import logging
 from urllib.parse import urlsplit
 
+import httpx
 from pydantic import ValidationError
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,10 +18,16 @@ from app.schemas.body_styling import (
     BodyStyleContent,
     BodyStyleDraft,
     BodyStyleRequest,
+    DraftOutfit,
 )
 from app.schemas.styling_profile import CATALOG, StylingProfile
 from app.services.ai_service import AIService, TextGenerationResult
+from app.services.body_style_fallback import rule_based_content
 from app.services.body_style_rendering import missing_information, render_garment, resolve_text
+from app.services.body_style_rules import StyleRules, build_rules, default_rules, enforce_rules
+from app.services.notification_providers import NotificationMessage
+
+logger = logging.getLogger(__name__)
 
 
 def body_facts(
@@ -64,11 +72,29 @@ def body_facts(
     return facts
 
 
+def render_outfit(source: DraftOutfit, facts: list[BodyFact], zh: bool) -> dict:
+    """Resolve fact tokens and render garment captions for one validated draft outfit."""
+    outfit = source.model_dump()
+    for field in ("title", "body_reason", "styling_tip"):
+        outfit[field] = resolve_text(outfit[field], facts, outfit["evidence"], zh)
+    for field in ("color_reason", "fabric_reason"):
+        outfit[field]["text"] = resolve_text(
+            outfit[field]["text"], facts, outfit[field]["evidence"], zh
+        )
+    outfit["garments"] = []
+    for garment in source.garments:
+        rendered = render_garment(garment, zh)
+        rendered["fabric_reason"] = resolve_text(garment.fabric_reason, facts, None, zh)
+        outfit["garments"].append(rendered)
+    return outfit
+
+
 def parse_result(
     content: str,
     facts: list[BodyFact],
     locale: str = "zh-CN",
     profile: StylingProfile | None = None,
+    rules: StyleRules | None = None,
 ) -> BodyStyleContent:
     if len(content) > 100_000:
         raise ValueError("response too large")
@@ -78,7 +104,10 @@ def parse_result(
     draft = BodyStyleDraft.model_validate(json.loads(text))
     zh = locale.startswith("zh")
     result = draft.model_dump()
-    available = {f.id for f in facts}
+    profile = profile or StylingProfile()
+    rules = rules or default_rules(profile)
+    enforce_rules(draft, rules)
+    available = {f.id for f in facts} | rules.evidence_ids()
     explanations = [
         draft.color_guidance,
         draft.fabric_guidance,
@@ -98,41 +127,7 @@ def parse_result(
         result[field]["text"] = resolve_text(
             result[field]["text"], facts, result[field]["evidence"], zh
         )
-    profile = profile or StylingProfile()
-    blocked = set(profile.avoided_materials)
-    for base, blends in {
-        "cotton": {"cotton_blend", "denim"},
-        "wool": {"wool_blend"},
-        "linen": {"linen_blend"},
-    }.items():
-        if base in blocked:
-            blocked.update(blends)
-    for outfit, source in zip(result["outfits"], draft.outfits, strict=True):
-        for field in ("title", "body_reason", "styling_tip"):
-            outfit[field] = resolve_text(outfit[field], facts, outfit["evidence"], zh)
-        for field in ("color_reason", "fabric_reason"):
-            outfit[field]["text"] = resolve_text(
-                outfit[field]["text"], facts, outfit[field]["evidence"], zh
-            )
-        outfit["garments"] = []
-        for garment in source.garments:
-            if garment.material in blocked:
-                raise ValueError(
-                    "garment uses a material the user explicitly avoids (including its blends)"
-                )
-            if (
-                "denim" in blocked
-                and garment.fabric
-                and garment.fabric.construction == "denim_weave"
-            ):
-                raise ValueError(
-                    "denim avoidance also excludes denim construction under another fiber name"
-                )
-            if CATALOG["colors"][garment.color]["family"] in profile.avoided_color_families:
-                raise ValueError("garment uses a color family the user explicitly avoids")
-            rendered = render_garment(garment, zh)
-            rendered["fabric_reason"] = resolve_text(garment.fabric_reason, facts, None, zh)
-            outfit["garments"].append(rendered)
+    result["outfits"] = [render_outfit(source, facts, zh) for source in draft.outfits]
     result["unknowns"] = missing_information(facts, zh, include_styling=True)
     return BodyStyleContent.model_validate(result)
 
@@ -172,11 +167,16 @@ to the actual measurements/proportions instead of generic 'this suits you' state
 that a numerical ratio alone proves a body category or guarantees fit. Do not invent computed numbers;
 refer to server fact IDs. State meaningful limitations for missing inseam, weight or shoulder information.
 Create exactly 3 distinct complete outfits, each with one top, bottom and shoes, optionally one outerwear
-and one accessory. No wardrobe IDs, products, shopping links, HTML or SVG. Use the supplied schema's
+and up to two different accessories. A second top is a layer: one base (tshirt/polo/shirt/turtleneck)
+under one mid layer (knit/sweatshirt/cardigan/vest); list the base first. A vest always needs a base.
+Each garment has a pattern (solid/stripe/check/herringbone/dot); shoes are solid and an outfit carries at
+most one bold pattern (stripe/check/dot). No wardrobe IDs, products, shopping links, HTML or SVG. Use the supplied schema's
 garment enums; bottom rise is required, other garments' rise is null. Colors must be six-digit hex.
 Never write measurement/ratio numbers yourself, even when they were provided. Use {{height}}, {{waist}},
 {{waist_chest_ratio}}, etc. The server expands these tokens into labelled real values. Tokens in an entry
-must also be included in that entry's evidence. Do not write any raw numbers in prose (including titles).
+must also be included in that entry's evidence. Digits are only allowed for small tailoring adjustments
+and counts (e.g. "show 1 cm of shirt cuff", "roll the hem twice"); never body measurements, weights,
+percentages or ratios.
 Do not discuss missing measurements in prose; the server generates missing-data limitations itself.
 Garment color, material, fit and length are the only source for the schematic AND garment captions.
 Do not return garment description, color_name or unknowns. Choose colors and materials from the enums.
@@ -212,19 +212,26 @@ not claims about a real product. Coordinate the whole outfit's texture, weight, 
 explain this in outfit.fabric_reason. Return global color_guidance and fabric_guidance too. All four
 reasoning dimensions (body fit, personal color, item fabrics, outfit coordination) must be concrete.
 Keep internal field names out of prose; references belong in evidence arrays or {{fact_id}} tokens.
+
+STYLE RULES CONTRACT:
+The server computed `rules` from the measurements, goals, fit concerns, season and occasion. They are
+hard limits: use only garment kinds allowed for the occasion, respect season bans on kinds, materials,
+fabric weights and constructions, add outerwear when the season requires it, and never use attributes
+listed under a proportion rule's `avoid`. Prefer the attributes under `prefer`. When an explanation
+relies on a rule, cite its id from rules.evidence_ids in evidence (never write rule ids in prose).
 """
 
 
-async def generate_body_style(
-    db: AsyncSession,
+def prepare_style(
     user: User,
     measurements: BodyMeasurements,
     request: BodyStyleRequest,
-    endpoints: list[dict],
-    recent_feedback: list[dict] | None = None,
-) -> BodyStyleRecommendation:
+    recent_feedback: list[dict] | None,
+    mode: str,
+):
     profile = StylingProfile.model_validate(user.styling_profile or {})
     facts = body_facts(measurements, profile)
+    rules = build_rules(measurements, profile, request)
     if recent_feedback:
         facts.append(
             BodyFact(id="previous_feedback", value=str(len(recent_feedback)), unit="self_report")
@@ -232,18 +239,157 @@ async def generate_body_style(
     snapshot = {
         "measurements": measurements.model_dump(exclude_none=True),
         "context": request.model_dump(
-            exclude={"body_measurements_revision", "styling_profile_revision"}
+            exclude={"body_measurements_revision", "styling_profile_revision", "mode"}
         ),
         "styling_profile": profile.model_dump(exclude_none=True),
         "recent_feedback": recent_feedback or [],
-        "contract_version": 2,
+        "contract_version": 3,
+        "mode": mode,
     }
-    language = "Simplified Chinese" if user.locale.startswith("zh") else "English"
+    return profile, facts, rules, snapshot
+
+
+async def save_style(
+    db: AsyncSession, user: User, snapshot: dict, facts: list[BodyFact], result, model: str
+) -> BodyStyleRecommendation:
+    record = BodyStyleRecommendation(
+        user_id=user.id,
+        input_snapshot=snapshot,
+        facts=[f.model_dump() for f in facts],
+        result=result.model_dump(),
+        model=model[:255],
+        status="done",
+        seen_at=func.now(),
+    )
+    db.add(record)
+    await db.flush()
+    await db.refresh(record)
+    return record
+
+
+async def generate_rule_based_style(
+    db: AsyncSession,
+    user: User,
+    measurements: BodyMeasurements,
+    request: BodyStyleRequest,
+    recent_feedback: list[dict] | None = None,
+    seed: int = 0,
+) -> BodyStyleRecommendation:
+    profile, facts, rules, snapshot = prepare_style(
+        user, measurements, request, recent_feedback, "rules"
+    )
+    result = rule_based_content(facts, profile, rules, request.style, user.locale, seed)
+    return await save_style(db, user, snapshot, facts, result, "rules")
+
+
+async def create_pending_style(
+    db: AsyncSession,
+    user: User,
+    measurements: BodyMeasurements,
+    request: BodyStyleRequest,
+    recent_feedback: list[dict] | None = None,
+) -> BodyStyleRecommendation:
+    """Store the validated inputs; the worker fills in the AI result later."""
+    _, facts, _, snapshot = prepare_style(user, measurements, request, recent_feedback, "ai")
+    record = BodyStyleRecommendation(
+        user_id=user.id,
+        input_snapshot=snapshot,
+        facts=[f.model_dump() for f in facts],
+        status="pending",
+    )
+    db.add(record)
+    await db.flush()
+    await db.refresh(record)
+    return record
+
+
+async def enqueue_style_job(record_id) -> str:
+    from arq import create_pool
+
+    from app.workers.queues import TAGGING_QUEUE
+    from app.workers.settings import get_redis_settings
+
+    redis = await create_pool(get_redis_settings())
+    try:
+        job = await redis.enqueue_job(
+            "generate_body_style_job", str(record_id), _queue_name=TAGGING_QUEUE
+        )
+        return job.job_id
+    finally:
+        await redis.aclose()
+
+
+async def complete_pending_style(db: AsyncSession, record_id) -> BodyStyleRecommendation | None:
+    """Run the AI generation for a pending report and store either the result or an error code."""
+    record = await db.scalar(
+        select(BodyStyleRecommendation)
+        .where(BodyStyleRecommendation.id == record_id)
+        .with_for_update(skip_locked=True)
+    )
+    if record is None or record.status != "pending":
+        return None
+    user = await db.get(User, record.user_id)
+    snapshot = record.input_snapshot
+    measurements = BodyMeasurements.model_validate(snapshot["measurements"])
+    profile = StylingProfile.model_validate(snapshot["styling_profile"])
+    request = BodyStyleRequest.model_validate(snapshot["context"])
+    rules = build_rules(measurements, profile, request)
+    facts = [BodyFact.model_validate(f) for f in record.facts]
+    try:
+        endpoints = await user_endpoints(db, user)
+        result, model = await generate_ai_content(
+            endpoints, facts, profile, rules, snapshot, user.locale
+        )
+        record.result = result.model_dump()
+        record.model = model[:255]
+        record.status = "done"
+    except InvalidStyleResponse:
+        record.status, record.error_code = "failed", "invalid_ai_response"
+    except (TimeoutError, httpx.TimeoutException):
+        record.status, record.error_code = "failed", "ai_timeout"
+    except Exception:
+        # Provider errors may include URLs; do not log prompts, body data, credentials or raw replies.
+        logger.warning("Body styling generation failed for the configured AI service")
+        record.status, record.error_code = "failed", "ai_failed"
+    await db.commit()
+    return record
+
+
+def style_ready_message(record: BodyStyleRecommendation, locale: str) -> NotificationMessage:
+    zh = locale.startswith("zh")
+    done = record.status == "done"
+    if done:
+        title = "你的穿搭报告好了" if zh else "Your styling report is ready"
+        body = record.result["summary"]
+    else:
+        title = "穿搭报告生成失败" if zh else "Your styling report could not be generated"
+        body = "请回到页面重试。" if zh else "Open the page to try again."
+    return NotificationMessage(
+        title=title,
+        body=body[:300],
+        url=get_settings().app_link(f"/dashboard/body-styling?report={record.id}"),
+        url_label="查看报告" if zh else "View report",
+        tags=["shirt"],
+        data={"screen": "body-styling", "report": str(record.id)},
+    )
+
+
+async def generate_ai_content(
+    endpoints: list[dict] | None,
+    facts: list[BodyFact],
+    profile: StylingProfile,
+    rules: StyleRules,
+    snapshot: dict,
+    locale: str,
+) -> tuple[BodyStyleContent, str]:
+    """Ask the model for a draft and validate it, with one repair attempt."""
+    language = "Simplified Chinese" if locale.startswith("zh") else "English"
     prompt = json.dumps(
         {
             "language": language,
             "input": snapshot,
             "facts": [f.model_dump() for f in facts],
+            "rules": rules.prompt_view(),
             "palette": CATALOG["colors"],
             "response_schema": BodyStyleDraft.model_json_schema(),
         },
@@ -260,7 +406,7 @@ async def generate_body_style(
             if not isinstance(generated, TextGenerationResult):
                 raise ValueError("AI provider returned no generation metadata")
             try:
-                result = parse_result(generated.content, facts, user.locale, profile)
+                result = parse_result(generated.content, facts, locale, profile, rules)
                 break
             except (ValidationError, ValueError) as exc:
                 if attempt:
@@ -282,18 +428,7 @@ async def generate_body_style(
                         default=str,
                     )
                 )
-
-    record = BodyStyleRecommendation(
-        user_id=user.id,
-        input_snapshot=snapshot,
-        facts=[f.model_dump() for f in facts],
-        result=result.model_dump(),
-        model=generated.model[:255],
-    )
-    db.add(record)
-    await db.flush()
-    await db.refresh(record)
-    return record
+    return result, generated.model
 
 
 class InvalidStyleResponse(ValueError):

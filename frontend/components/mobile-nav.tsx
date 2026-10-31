@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Home, Shirt, Sparkles, LayoutGrid, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { BodyStyleUnreadDot } from '@/components/body-styling/unread-dot';
 import { useTranslations } from 'next-intl';
 
 export function MobileNav() {
@@ -36,7 +37,12 @@ export function MobileNav() {
                   : 'text-muted-foreground hover:text-foreground'
               )}
             >
-              <item.icon className="h-5 w-5" aria-hidden="true" />
+              <span className="relative">
+                <item.icon className="h-5 w-5" aria-hidden="true" />
+                {item.href === '/dashboard/body-styling' && (
+                  <BodyStyleUnreadDot className="absolute -right-1 -top-1" />
+                )}
+              </span>
               <span>{item.name}</span>
             </Link>
           );

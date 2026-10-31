@@ -21,5 +21,6 @@
   "toggleTheme": "切換主題",
   "userFallback": "使用者",
   "wardrobe": "衣櫥",
-  "bodyStyling": "身材穿搭"
+  "bodyStyling": "身材穿搭",
+  "bodyStylingUnread": "{count} 份新的穿搭報告"
 }

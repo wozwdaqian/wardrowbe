@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { X, Home, Shirt, Sparkles, Layers, LayoutGrid, History, BarChart3, Brain, Settings, Users, Bell, HeartHandshake } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { BodyStyleUnreadDot } from '@/components/body-styling/unread-dot';
 import { useTranslations } from 'next-intl';
 
 interface MobileSidebarProps {
@@ -107,6 +108,9 @@ export function MobileSidebar({ open, onClose }: MobileSidebarProps) {
                         >
                           <item.icon className="h-6 w-6 shrink-0" aria-hidden="true" />
                           {item.name}
+                          {item.href === '/dashboard/body-styling' && (
+                            <BodyStyleUnreadDot className="ml-auto self-center" />
+                          )}
                         </Link>
                       </li>
                     );

@@ -9,6 +9,7 @@ from app.config import get_settings
 from app.logging_config import configure_logging
 from app.models.item import ClothingItem, ItemStatus
 from app.services.ai_service import AIService
+from app.workers.body_styling import generate_body_style_job, recover_stale_body_styles
 from app.workers.db import close_db, get_db_session, init_db
 from app.workers.notifications import (
     check_scheduled_notifications,
@@ -121,6 +122,7 @@ async def shutdown(ctx: dict) -> None:
 class WorkerSettings:
     functions = [
         tag_item_image,
+        generate_body_style_job,
         retry_failed_notifications,
         check_scheduled_notifications,
         process_scheduled_notification,
@@ -134,6 +136,7 @@ class WorkerSettings:
         cron(check_wash_reminders, minute=15, hour={0, 6, 12, 18}),
         cron(update_learning_profiles, minute=30, hour=None),
         cron(recover_stale_processing_items, minute={0, 15, 30, 45}),
+        cron(recover_stale_body_styles, minute={5, 20, 35, 50}),
     ]
 
     on_startup = startup

@@ -21,5 +21,6 @@
   "toggleTheme": "Design wechseln",
   "userFallback": "Benutzer",
   "wardrobe": "Kleiderschrank",
-  "bodyStyling": "Body styling"
+  "bodyStyling": "Body styling",
+  "bodyStylingUnread": "{count} new styling report(s)"
 }

@@ -8,6 +8,7 @@ import pytest
 import pytest_asyncio
 from pydantic import ValidationError
 
+from app.api import body_styling as body_styling_api
 from app.config import get_settings
 from app.models.body_styling import BodyStyleRecommendation
 from app.models.user import User
@@ -163,6 +164,13 @@ async def setup_style(monkeypatch, db_session, test_user):
         )
     )
     monkeypatch.setattr(service, "AIService", Mock(return_value=mocked))
+
+    async def run_inline(record_id):
+        # Stands in for the arq worker: the job runs on the same test session.
+        await service.complete_pending_style(db_session, record_id)
+        return "inline-job"
+
+    monkeypatch.setattr(body_styling_api, "enqueue_style_job", run_inline)
     return mocked
 
 
@@ -171,7 +179,7 @@ async def test_empty_wardrobe_generation_history_snapshot_and_ownership(
     client, db_session, test_user, auth_headers, setup_style
 ):
     response = await client.post(BASE + "/recommendations", headers=auth_headers, json={})
-    assert response.status_code == 201, response.text
+    assert response.status_code == 202, response.text
     report = response.json()
     assert len(report["result"]["outfits"]) == 3
     assert report["input_snapshot"]["context"]["goals"] == ["balance", "comfort"]
@@ -219,7 +227,7 @@ async def test_body_inputs_change_actual_prompt_facts(
         await client.post(
             BASE + "/recommendations", headers=auth_headers, json={"goals": ["elongate_legs"]}
         )
-    ).status_code == 201
+    ).status_code == 202
     sent = json.loads(setup_style.generate_text.call_args.args[0])
     values = {f["id"]: f["value"] for f in sent["facts"]}
     assert values["waist_chest_ratio"] == 0.745
@@ -235,7 +243,7 @@ async def test_repairs_bad_model_json_once(client, auth_headers, setup_style):
     ]
     assert (
         await client.post(BASE + "/recommendations", headers=auth_headers, json={})
-    ).status_code == 201
+    ).status_code == 202
     assert setup_style.generate_text.call_count == 2
     assert "Repair this invalid response" in setup_style.generate_text.call_args.args[0]
 
@@ -249,10 +257,47 @@ async def test_repairs_fabricated_measurement_before_saving(client, auth_headers
         setup_style.generate_text.return_value,
     ]
     response = await client.post(BASE + "/recommendations", headers=auth_headers, json={})
-    assert response.status_code == 201
+    assert response.status_code == 202
     assert setup_style.generate_text.call_count == 2
     assert "105" not in json.dumps(response.json())
     assert (await client.get(BASE + "/recommendations", headers=auth_headers)).json()["total"] == 1
+
+
+@pytest.mark.asyncio
+async def test_season_rules_reach_prompt_and_trigger_repair(client, auth_headers, setup_style):
+    bad = sample_result()
+    bad["outfits"][0]["garments"].insert(
+        2,
+        {
+            **deepcopy(bad["outfits"][0]["garments"][0]),
+            "slot": "outerwear",
+            "kind": "coat",
+            "color": "#363c41",
+            "length": "long",
+            "material": "wool",
+            "fabric": {
+                "construction": "flannel",
+                "weight": "heavy",
+                "drape": "crisp",
+                "sheen": "matte",
+                "stretch": "none",
+            },
+        },
+    )
+    setup_style.generate_text.side_effect = [
+        TextGenerationResult(content=json.dumps(bad), model="fixture-text", endpoint="fixture"),
+        setup_style.generate_text.return_value,
+    ]
+    response = await client.post(
+        BASE + "/recommendations", headers=auth_headers, json={"season": "summer"}
+    )
+    assert response.status_code == 202, response.text
+    first, repair = (call.args[0] for call in setup_style.generate_text.call_args_list)
+    assert "coat" in json.loads(first)["rules"]["season"]["banned_kinds"]
+    assert "season summer does not allow outerwear coat" in repair
+    assert all(
+        g["kind"] != "coat" for o in response.json()["result"]["outfits"] for g in o["garments"]
+    )
 
 
 @pytest.mark.asyncio
@@ -308,21 +353,21 @@ async def test_stale_profile_cannot_overwrite_new_values_or_generate(
             "body_measurements_revision": response.json()["body_measurements_revision"],
         },
     )
-    assert generated.status_code == 201
+    assert generated.status_code == 202
     assert generated.json()["input_snapshot"]["measurements"]["waist"] == 84
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "failure,code,status",
+    "failure,code",
     [
-        ("invalid", "invalid_ai_response", 502),
-        ("timeout", "ai_timeout", 504),
-        ("service", "ai_failed", 502),
+        ("invalid", "invalid_ai_response"),
+        ("timeout", "ai_timeout"),
+        ("service", "ai_failed"),
     ],
 )
-async def test_failed_generation_does_not_save_history(
-    client, db_session, test_user, auth_headers, setup_style, failure, code, status
+async def test_failed_generation_is_recorded_without_a_result(
+    client, db_session, test_user, auth_headers, setup_style, failure, code
 ):
     if failure == "invalid":
         setup_style.generate_text.return_value = TextGenerationResult(
@@ -333,9 +378,18 @@ async def test_failed_generation_does_not_save_history(
     else:
         setup_style.generate_text.side_effect = RuntimeError("provider failed")
     response = await client.post(BASE + "/recommendations", headers=auth_headers, json={})
-    assert response.status_code == status
-    assert response.json()["detail"]["code"] == code
-    assert (await client.get(BASE + "/recommendations", headers=auth_headers)).json()["total"] == 0
+    assert response.status_code == 202
+    report = response.json()
+    assert report["status"] == "failed" and report["error_code"] == code
+    assert report["result"] is None
+    history = (await client.get(BASE + "/recommendations", headers=auth_headers)).json()
+    assert history["items"][0]["status"] == "failed" and history["items"][0]["summary"] is None
+    feedback = await client.patch(
+        BASE + f"/recommendations/{report['id']}/feedback",
+        headers=auth_headers,
+        json={"outfit_index": 0, "overall": "like"},
+    )
+    assert feedback.status_code == 409
     assert setup_style.generate_text.call_count == (2 if failure == "invalid" else 1)
 
 
@@ -351,8 +405,26 @@ async def test_disabled_ai_still_allows_profile_and_history(
             "/api/v1/users/me", headers=auth_headers, json={"body_measurements": MEASUREMENTS}
         )
     ).status_code == 200
-    response = await client.post(BASE + "/recommendations", headers=auth_headers, json={})
+    # Explicitly asking for the AI version still reports that AI is unavailable.
+    response = await client.post(
+        BASE + "/recommendations", headers=auth_headers, json={"mode": "ai"}
+    )
     assert response.status_code == 503
+    # The default falls back to deterministic rules without calling a model.
+    response = await client.post(
+        BASE + "/recommendations", headers=auth_headers, json={"season": "winter"}
+    )
+    assert response.status_code == 201, response.text
+    report = response.json()
+    assert report["mode"] == "rules" and report["model"] == "rules"
+    assert len(report["result"]["outfits"]) == 3
+    assert all(
+        any(g["slot"] == "outerwear" for g in outfit["garments"])
+        for outfit in report["result"]["outfits"]
+    )
+    assert "mode" not in report["input_snapshot"]["context"]
+    history = (await client.get(BASE + "/recommendations", headers=auth_headers)).json()
+    assert history["items"][0]["mode"] == "rules"
     setup_style.generate_text.assert_not_called()
 
 
@@ -551,10 +623,10 @@ async def test_profile_preferences_are_validated_and_conflict_protected(
         headers=auth_headers,
         json={"styling_profile_revision": saved.json()["styling_profile_revision"]},
     )
-    assert generated.status_code == 201
+    assert generated.status_code == 202
     report = generated.json()
     assert report["input_snapshot"]["styling_profile"]["undertone"] == "neutral"
-    assert report["input_snapshot"]["contract_version"] == 2
+    assert report["input_snapshot"]["contract_version"] == 3
     sent = json.loads(setup_style.generate_text.call_args.args[0])
     assert sent["input"]["styling_profile"]["avoided_color_families"] == ["red"]
     await client.patch(
@@ -585,7 +657,7 @@ async def test_feedback_is_owned_preserved_and_used_in_future_prompt(
     )
     assert (
         await client.post(BASE + "/recommendations", headers=auth_headers, json={})
-    ).status_code == 201
+    ).status_code == 202
     sent = json.loads(setup_style.generate_text.call_args.args[0])
     assert len(sent["input"]["recent_feedback"]) == 2
     assert sent["input"]["recent_feedback"][0]["ratings"]["colors"] == "like"
@@ -652,3 +724,106 @@ async def test_legacy_reports_still_load_without_new_fields(
     assert response.json()["result"]["summary"] == old["summary"]
     assert response.json()["result"]["color_guidance"] is None
     assert response.json()["result"]["outfits"][0]["garments"][0]["fabric"] is None
+
+
+@pytest.mark.asyncio
+async def test_delete_recommendation_is_owned(client, db_session, auth_headers, setup_style):
+    first = (await client.post(BASE + "/recommendations", headers=auth_headers, json={})).json()
+    second = (await client.post(BASE + "/recommendations", headers=auth_headers, json={})).json()
+    record = await db_session.get(BodyStyleRecommendation, second["id"])
+    other = User(id=uuid4(), email=f"{uuid4()}@example.com", display_name="Other")
+    db_session.add(other)
+    await db_session.flush()
+    record.user_id = other.id
+    await db_session.commit()
+    # Someone else's report is invisible, so it cannot be deleted either.
+    assert (
+        await client.delete(BASE + "/recommendations/" + second["id"], headers=auth_headers)
+    ).status_code == 404
+    assert (
+        await client.delete(BASE + "/recommendations/" + first["id"], headers=auth_headers)
+    ).status_code == 204
+    assert (
+        await client.get(BASE + "/recommendations/" + first["id"], headers=auth_headers)
+    ).status_code == 404
+    assert await db_session.get(BodyStyleRecommendation, second["id"]) is not None
+
+
+@pytest.mark.asyncio
+async def test_background_report_is_pending_then_unread_until_opened(
+    client, db_session, auth_headers, setup_style, monkeypatch
+):
+    queued = []
+
+    async def queue_only(record_id):
+        queued.append(record_id)
+        return "job-1"
+
+    monkeypatch.setattr(body_styling_api, "enqueue_style_job", queue_only)
+    response = await client.post(BASE + "/recommendations", headers=auth_headers, json={})
+    assert response.status_code == 202
+    report = response.json()
+    assert report["status"] == "pending" and report["result"] is None
+    assert (await client.get(BASE + "/unread", headers=auth_headers)).json() == {
+        "unread": 0,
+        "pending": 1,
+    }
+    # Polling while pending does not mark the report as seen.
+    assert (
+        await client.get(BASE + f"/recommendations/{report['id']}", headers=auth_headers)
+    ).json()["status"] == "pending"
+    record = await service.complete_pending_style(db_session, queued[0])
+    assert record.status == "done" and record.job_id == "job-1"
+    # A second delivery of the same job is a no-op.
+    assert await service.complete_pending_style(db_session, queued[0]) is None
+    assert (await client.get(BASE + "/unread", headers=auth_headers)).json()["unread"] == 1
+    detail = await client.get(BASE + f"/recommendations/{report['id']}", headers=auth_headers)
+    assert detail.json()["status"] == "done" and detail.json()["result"]["outfits"]
+    assert (await client.get(BASE + "/unread", headers=auth_headers)).json() == {
+        "unread": 0,
+        "pending": 0,
+    }
+
+
+@pytest.mark.asyncio
+async def test_queue_failure_marks_report_failed(client, auth_headers, setup_style, monkeypatch):
+    async def broken(record_id):
+        raise ConnectionError("redis down")
+
+    monkeypatch.setattr(body_styling_api, "enqueue_style_job", broken)
+    response = await client.post(BASE + "/recommendations", headers=auth_headers, json={})
+    assert response.status_code == 202
+    assert response.json()["status"] == "failed"
+    assert response.json()["error_code"] == "queue_failed"
+
+
+@pytest.mark.asyncio
+async def test_rule_reports_are_seen_immediately(client, auth_headers, setup_style):
+    response = await client.post(
+        BASE + "/recommendations", headers=auth_headers, json={"mode": "rules"}
+    )
+    assert response.status_code == 201
+    assert (await client.get(BASE + "/unread", headers=auth_headers)).json()["unread"] == 0
+
+
+@pytest.mark.asyncio
+async def test_wardrobe_match_endpoint_uses_own_items_only(
+    client, db_session, test_user, auth_headers, setup_style
+):
+    from app.models.item import ClothingItem
+
+    db_session.add(
+        ClothingItem(user_id=test_user.id, type="shirt", primary_color="green", image_path="a.jpg")
+    )
+    await db_session.commit()
+    report = (await client.post(BASE + "/recommendations", headers=auth_headers, json={})).json()
+    response = await client.get(
+        BASE + f"/recommendations/{report['id']}/wardrobe-match", headers=auth_headers
+    )
+    assert response.status_code == 200, response.text
+    match = response.json()
+    assert match["wardrobe_items"] == 1 and match["combinations"] == 0
+    assert match["outfits"][0]["garments"][0]["status"] == "owned"
+    assert (
+        await client.get(BASE + f"/recommendations/{uuid4()}/wardrobe-match", headers=auth_headers)
+    ).status_code == 404

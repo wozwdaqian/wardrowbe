@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 from uuid import UUID
 
+from pydantic import ValidationError
 from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -23,7 +24,10 @@ from app.models.outfit import (
 )
 from app.models.preference import UserPreference
 from app.models.user import User
+from app.schemas.body_styling import BodyMeasurements, BodyStyleRequest
+from app.schemas.styling_profile import StylingProfile
 from app.services.ai_service import AIResponseTruncatedError, AIService, require_internal_ai
+from app.services.body_style_rules import build_rules
 from app.services.item_scorer import (
     get_season,
     rain_likely,
@@ -34,6 +38,7 @@ from app.services.item_scorer import (
     temperature_band,
 )
 from app.services.suggestion_cache import pop_suggestion, push_suggestions
+from app.services.wardrobe_matching import avoided_by_profile
 from app.services.weather_service import (
     GeocodingServiceError,
     WeatherData,
@@ -207,6 +212,66 @@ class RecommendationContext:
 
 
 RECOMMENDATION_PROMPT = render_outfit_prompt(load_prompt("recommendation"))
+
+
+# Wardrobe occasions -> the body styling occasions their rules were written for.
+STYLE_OCCASIONS = {
+    "office": "work",
+    "work": "work",
+    "business-casual": "work",
+    "interview": "formal",
+    "formal": "formal",
+    "wedding": "formal",
+    "date": "date",
+    "dinner": "date",
+    "weekend": "weekend",
+    "brunch": "weekend",
+}
+
+
+def parse_styling_profile(raw: dict | None) -> StylingProfile:
+    try:
+        return StylingProfile.model_validate(raw or {})
+    except ValidationError:
+        return StylingProfile()
+
+
+def body_style_rule_lines(
+    body_measurements: dict | None,
+    profile: StylingProfile | None,
+    occasion: str | None,
+    season: str | None,
+) -> list[str]:
+    """Summarise the deterministic body styling rules for the wardrobe prompt."""
+    profile = profile or StylingProfile()
+    try:
+        measurements = BodyMeasurements.model_validate(body_measurements or {})
+    except ValidationError:
+        measurements = None
+    request = BodyStyleRequest(
+        occasion=STYLE_OCCASIONS.get(occasion or "", "daily"),
+        season={"fall": "autumn"}.get(season or "", season or "all")
+        if season in {"spring", "summer", "fall", "autumn", "winter"}
+        else "all",
+    )
+    rules = build_rules(measurements, profile, request)
+    lines = []
+    for area, rule in rules.proportion.items():
+        if not rule.reasons:
+            continue
+        parts = [f"prefer {k} {'/'.join(v)}" for k, v in rule.prefer.items()]
+        parts += [f"avoid {k} {'/'.join(v)}" for k, v in rule.avoid.items()]
+        lines.append(f"- Body proportion ({area.replace('_', ' ')}): {'; '.join(parts)}")
+    if rules.avoided_color_families:
+        lines.append(
+            "- Never use these color families (personal profile): "
+            + ", ".join(rules.avoided_color_families)
+        )
+    if rules.avoided_materials:
+        lines.append(
+            "- Never use these materials, including blends: " + ", ".join(rules.avoided_materials)
+        )
+    return lines
 
 
 class RecommendationService:
@@ -454,8 +519,11 @@ class RecommendationService:
         number_map: dict[int, UUID] | None = None,
         occasion: str | None = None,
         body_measurements: dict | None = None,
+        styling_profile: StylingProfile | None = None,
+        season: str | None = None,
     ) -> str:
         lines = []
+        lines.extend(body_style_rule_lines(body_measurements, styling_profile, occasion, season))
 
         if body_measurements:
             m = body_measurements
@@ -937,6 +1005,14 @@ class RecommendationService:
                 f"Using learned preferences for user {user.id}: {list(learned_prefs.keys())}"
             )
 
+        # Personal styling avoidances are hard constraints; requested items are kept regardless.
+        styling_profile = parse_styling_profile(getattr(user, "styling_profile", None))
+        candidates = [
+            item
+            for item in candidates
+            if item.id in (mandatory_ids or ()) or not avoided_by_profile(item, styling_profile)
+        ]
+
         # Score items (replaces old filter approach)
         user_today = get_user_today(user)
         lat = float(user.location_lat) if user.location_lat is not None else None
@@ -971,6 +1047,8 @@ class RecommendationService:
             number_map,
             occasion=occasion,
             body_measurements=getattr(user, "body_measurements", None),
+            styling_profile=styling_profile,
+            season=current_season,
         )
 
         prompt = RECOMMENDATION_PROMPT.format(

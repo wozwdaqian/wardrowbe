@@ -90,14 +90,18 @@ const TARGETS = [
   { source: 'locales.json', output: 'locales.ts', render: renderLocales },
   { source: 'scales.json', output: 'scales.ts', render: renderScales },
   { source: 'preference_defaults.json', output: 'preference-defaults.ts', render: renderPreferenceDefaults },
+  // JSON cannot carry the generated header, so the body styling catalog is mirrored verbatim.
+  { source: 'body_styling_catalog.json', output: 'body-styling-catalog.json', raw: true },
 ];
 
 const check = process.argv.includes('--check');
 let stale = false;
 
-for (const { source, output, render } of TARGETS) {
+for (const { source, output, render, raw } of TARGETS) {
   const data = JSON.parse(readFileSync(resolve(DATA_DIR, source), 'utf8'));
-  const expected = [...header(source), ...render(data), ''].join('\n');
+  const expected = raw
+    ? `${JSON.stringify(data, null, 2)}\n`
+    : [...header(source), ...render(data), ''].join('\n');
   const path = resolve(OUTPUT_DIR, output);
 
   if (check) {

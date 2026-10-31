@@ -32,7 +32,13 @@ export const queryKeys = {
       all: BODY_STYLE_HISTORY,
       page: (offset: number) => [...BODY_STYLE_HISTORY, offset] as const,
     },
+    reports: ['body-style-report'] as const,
     report: (reportId: string | null) => ['body-style-report', reportId] as const,
+    unread: ['body-style-unread'] as const,
+    wardrobeMatch: (reportId: string) => ['body-style-wardrobe-match', reportId] as const,
+    todayAll: ['body-style-today'] as const,
+    today: (occasion: string | null, reroll: number) =>
+      ['body-style-today', occasion, reroll] as const,
   },
 
   items: {

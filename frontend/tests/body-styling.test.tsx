@@ -72,6 +72,32 @@ describe("body styling illustrations", () => {
     expect(markup).toContain("<svg");
     expect(markup).not.toContain("https:");
   });
+  it("layers a mid top over the base and draws two accessories, a tie and prints", () => {
+    const markup = renderToStaticMarkup(
+      <OutfitIllustration
+        outfit={{
+          ...outfit,
+          garments: [
+            { ...top, pattern: "stripe" },
+            { ...top, kind: "vest", color: "#aa3322" },
+            bottom,
+            { ...shoes, kind: "oxfords" },
+            { ...top, slot: "accessory", kind: "tie", color: "#112233" },
+            { ...top, slot: "accessory", kind: "watch", color: "#445566" },
+            { ...top, slot: "accessory", kind: "glasses", color: "#778899" },
+          ],
+        }}
+      />,
+    );
+    // The base shirt carries a print pattern; the vest is drawn after it with its own color.
+    expect(markup).toMatch(/<pattern id="fabric-[^"]*-0"/);
+    expect(markup.indexOf("#aa3322")).toBeGreaterThan(
+      markup.indexOf('d="M30 7 16 15'),
+    );
+    expect(markup).toContain('fill="#112233"');
+    expect(markup).toContain("#445566");
+    expect(markup).toContain("#778899");
+  });
   it("starts with the agreed context", () => {
     expect(DEFAULT_CONTEXT).toEqual({
       occasion: "daily",

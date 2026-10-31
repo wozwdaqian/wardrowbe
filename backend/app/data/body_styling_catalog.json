@@ -534,5 +534,27 @@
       "family": "yellow",
       "lightness": "light"
     }
+  },
+  "patterns": {
+    "solid": {
+      "zh": "纯色",
+      "en": "Solid"
+    },
+    "stripe": {
+      "zh": "条纹",
+      "en": "Stripe"
+    },
+    "check": {
+      "zh": "格纹",
+      "en": "Check"
+    },
+    "herringbone": {
+      "zh": "人字纹",
+      "en": "Herringbone"
+    },
+    "dot": {
+      "zh": "波点",
+      "en": "Dot"
+    }
   }
 }

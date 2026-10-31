@@ -1,0 +1,498 @@
+[
+  {
+    "id": "tall_slim_minimal",
+    "measurements": {
+      "height": 188,
+      "chest": 94,
+      "waist": 76,
+      "hips": 92,
+      "inseam": 90,
+      "shoulder_type": "balanced"
+    },
+    "styling_profile": {},
+    "request": {
+      "occasion": "daily",
+      "style": "minimal",
+      "season": "spring"
+    }
+  },
+  {
+    "id": "short_legs_work",
+    "measurements": {
+      "height": 168,
+      "chest": 98,
+      "waist": 84,
+      "hips": 98,
+      "inseam": 72
+    },
+    "styling_profile": {
+      "fit_issues": [
+        "hem_bunches"
+      ]
+    },
+    "request": {
+      "occasion": "work",
+      "style": "smart_casual",
+      "season": "autumn",
+      "goals": [
+        "elongate_legs"
+      ]
+    }
+  },
+  {
+    "id": "midsection_formal_winter",
+    "measurements": {
+      "height": 176,
+      "chest": 104,
+      "waist": 100,
+      "hips": 106,
+      "weight": 92
+    },
+    "styling_profile": {
+      "fit_issues": [
+        "belly_cling"
+      ]
+    },
+    "request": {
+      "occasion": "formal",
+      "style": "classic",
+      "season": "winter",
+      "goals": [
+        "midsection",
+        "comfort"
+      ]
+    }
+  },
+  {
+    "id": "narrow_shoulders_date",
+    "measurements": {
+      "height": 172,
+      "chest": 90,
+      "waist": 74,
+      "hips": 90,
+      "shoulder_type": "narrow"
+    },
+    "styling_profile": {
+      "preferred_color_families": [
+        "blue"
+      ]
+    },
+    "request": {
+      "occasion": "date",
+      "style": "smart_casual",
+      "season": "spring",
+      "goals": [
+        "shoulders"
+      ]
+    }
+  },
+  {
+    "id": "broad_shoulders_street",
+    "measurements": {
+      "height": 181,
+      "chest": 112,
+      "waist": 86,
+      "hips": 100,
+      "shoulder_type": "broad"
+    },
+    "styling_profile": {},
+    "request": {
+      "occasion": "weekend",
+      "style": "street",
+      "season": "summer"
+    }
+  },
+  {
+    "id": "athletic_thighs_sporty",
+    "measurements": {
+      "height": 178,
+      "chest": 104,
+      "waist": 80,
+      "hips": 102,
+      "thigh": 62
+    },
+    "styling_profile": {
+      "fit_issues": [
+        "thighs_tight",
+        "calves_tight"
+      ]
+    },
+    "request": {
+      "occasion": "daily",
+      "style": "sporty",
+      "season": "summer"
+    }
+  },
+  {
+    "id": "no_wool_no_denim",
+    "measurements": {
+      "height": 174,
+      "chest": 96,
+      "waist": 82,
+      "hips": 96
+    },
+    "styling_profile": {
+      "avoided_materials": [
+        "wool",
+        "denim"
+      ]
+    },
+    "request": {
+      "occasion": "work",
+      "style": "minimal",
+      "season": "winter"
+    }
+  },
+  {
+    "id": "avoid_dark_colors",
+    "measurements": {
+      "height": 170,
+      "chest": 92,
+      "waist": 78,
+      "hips": 94
+    },
+    "styling_profile": {
+      "avoided_color_families": [
+        "black",
+        "grey",
+        "brown"
+      ]
+    },
+    "request": {
+      "occasion": "daily",
+      "style": "minimal",
+      "season": "all"
+    }
+  },
+  {
+    "id": "only_neutrals",
+    "measurements": {
+      "height": 183,
+      "chest": 100,
+      "waist": 84,
+      "hips": 98
+    },
+    "styling_profile": {
+      "avoided_color_families": [
+        "red",
+        "purple",
+        "yellow",
+        "orange",
+        "pink",
+        "green"
+      ],
+      "preferred_color_families": [
+        "blue"
+      ]
+    },
+    "request": {
+      "occasion": "work",
+      "style": "classic",
+      "season": "autumn"
+    }
+  },
+  {
+    "id": "warm_undertone_soft",
+    "measurements": {
+      "height": 175,
+      "chest": 98,
+      "waist": 82,
+      "hips": 97
+    },
+    "styling_profile": {
+      "skin_depth": "medium",
+      "undertone": "warm",
+      "hair_color": "black",
+      "contrast_preference": "soft"
+    },
+    "request": {
+      "occasion": "date",
+      "style": "minimal",
+      "season": "autumn"
+    }
+  },
+  {
+    "id": "cool_bold_contrast",
+    "measurements": {
+      "height": 179,
+      "chest": 99,
+      "waist": 80,
+      "hips": 96
+    },
+    "styling_profile": {
+      "skin_depth": "fair",
+      "undertone": "cool",
+      "hair_color": "dark_brown",
+      "contrast_preference": "bold"
+    },
+    "request": {
+      "occasion": "weekend",
+      "style": "street",
+      "season": "spring"
+    }
+  },
+  {
+    "id": "minimal_info",
+    "measurements": {
+      "height": 172,
+      "chest": 96,
+      "waist": 84,
+      "hips": 98
+    },
+    "styling_profile": {},
+    "request": {}
+  },
+  {
+    "id": "full_info_classic",
+    "measurements": {
+      "height": 180,
+      "chest": 102,
+      "waist": 86,
+      "hips": 100,
+      "weight": 80,
+      "inseam": 82,
+      "shoulder_type": "balanced",
+      "shoulder_width": 47,
+      "thigh": 58
+    },
+    "styling_profile": {
+      "skin_depth": "tan",
+      "undertone": "neutral",
+      "hair_color": "black",
+      "eye_color": "dark",
+      "contrast_preference": "balanced",
+      "fabric_preferences": [
+        "breathable",
+        "matte"
+      ]
+    },
+    "request": {
+      "occasion": "formal",
+      "style": "classic",
+      "season": "spring"
+    }
+  },
+  {
+    "id": "summer_formal",
+    "measurements": {
+      "height": 177,
+      "chest": 100,
+      "waist": 88,
+      "hips": 100
+    },
+    "styling_profile": {},
+    "request": {
+      "occasion": "formal",
+      "style": "minimal",
+      "season": "summer"
+    }
+  },
+  {
+    "id": "winter_weekend_street",
+    "measurements": {
+      "height": 169,
+      "chest": 94,
+      "waist": 80,
+      "hips": 94
+    },
+    "styling_profile": {},
+    "request": {
+      "occasion": "weekend",
+      "style": "street",
+      "season": "winter"
+    }
+  },
+  {
+    "id": "winter_sporty_no_synthetic",
+    "measurements": {
+      "height": 182,
+      "chest": 100,
+      "waist": 82,
+      "hips": 98
+    },
+    "styling_profile": {
+      "avoided_materials": [
+        "synthetic",
+        "leather"
+      ]
+    },
+    "request": {
+      "occasion": "daily",
+      "style": "sporty",
+      "season": "winter"
+    }
+  },
+  {
+    "id": "summer_work_linen_only",
+    "measurements": {
+      "height": 176,
+      "chest": 98,
+      "waist": 84,
+      "hips": 98
+    },
+    "styling_profile": {
+      "avoided_materials": [
+        "wool",
+        "synthetic",
+        "silk"
+      ],
+      "fabric_preferences": [
+        "breathable"
+      ]
+    },
+    "request": {
+      "occasion": "work",
+      "style": "smart_casual",
+      "season": "summer"
+    }
+  },
+  {
+    "id": "autumn_date_hips",
+    "measurements": {
+      "height": 171,
+      "chest": 92,
+      "waist": 76,
+      "hips": 98
+    },
+    "styling_profile": {
+      "fit_issues": [
+        "rise_uncomfortable"
+      ]
+    },
+    "request": {
+      "occasion": "date",
+      "style": "classic",
+      "season": "autumn"
+    }
+  },
+  {
+    "id": "spring_weekend_comfort",
+    "measurements": {
+      "height": 186,
+      "chest": 108,
+      "waist": 96,
+      "hips": 108
+    },
+    "styling_profile": {
+      "fit_issues": [
+        "shoulders_tight",
+        "belly_cling"
+      ]
+    },
+    "request": {
+      "occasion": "weekend",
+      "style": "minimal",
+      "season": "spring",
+      "goals": [
+        "comfort"
+      ]
+    }
+  },
+  {
+    "id": "tall_long_legs_formal",
+    "measurements": {
+      "height": 192,
+      "chest": 100,
+      "waist": 82,
+      "hips": 98,
+      "inseam": 92
+    },
+    "styling_profile": {},
+    "request": {
+      "occasion": "formal",
+      "style": "classic",
+      "season": "autumn",
+      "goals": [
+        "balance"
+      ]
+    }
+  },
+  {
+    "id": "short_stature_balance",
+    "measurements": {
+      "height": 160,
+      "chest": 88,
+      "waist": 72,
+      "hips": 88,
+      "inseam": 70
+    },
+    "styling_profile": {},
+    "request": {
+      "occasion": "daily",
+      "style": "smart_casual",
+      "season": "all",
+      "goals": [
+        "elongate_legs",
+        "balance"
+      ]
+    }
+  },
+  {
+    "id": "cotton_avoider",
+    "measurements": {
+      "height": 175,
+      "chest": 97,
+      "waist": 81,
+      "hips": 96
+    },
+    "styling_profile": {
+      "avoided_materials": [
+        "cotton"
+      ]
+    },
+    "request": {
+      "occasion": "weekend",
+      "style": "sporty",
+      "season": "spring"
+    }
+  },
+  {
+    "id": "all_goals_feedback",
+    "measurements": {
+      "height": 173,
+      "chest": 101,
+      "waist": 93,
+      "hips": 101,
+      "shoulder_type": "narrow"
+    },
+    "styling_profile": {
+      "fit_issues": [
+        "sleeves_long"
+      ]
+    },
+    "request": {
+      "occasion": "work",
+      "style": "classic",
+      "season": "winter",
+      "goals": [
+        "balance",
+        "elongate_legs",
+        "midsection",
+        "shoulders",
+        "comfort"
+      ]
+    }
+  },
+  {
+    "id": "colorful_preference",
+    "measurements": {
+      "height": 178,
+      "chest": 96,
+      "waist": 80,
+      "hips": 95
+    },
+    "styling_profile": {
+      "preferred_color_families": [
+        "green",
+        "red",
+        "purple"
+      ],
+      "contrast_preference": "bold"
+    },
+    "request": {
+      "occasion": "date",
+      "style": "street",
+      "season": "summer"
+    }
+  }
+]

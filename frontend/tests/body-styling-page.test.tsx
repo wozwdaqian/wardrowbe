@@ -15,9 +15,14 @@ const mocks = vi.hoisted(() => ({
   profile: null as UserProfile | null,
   mutate: vi.fn(),
   refetch: vi.fn(),
-  replace: vi.fn(),
+  search: new URLSearchParams(),
+  // Mirrors the router: replacing the URL changes what useSearchParams returns.
+  replace: vi.fn((url: string) => {
+    mocks.search = new URLSearchParams(url.split("?")[1] || "");
+  }),
   post: vi.fn(),
   get: vi.fn(),
+  delete: vi.fn(),
 }));
 vi.mock("next-intl", () => ({
   useLocale: () => "zh-CN",
@@ -25,7 +30,7 @@ vi.mock("next-intl", () => ({
 }));
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ replace: mocks.replace }),
-  useSearchParams: () => new URLSearchParams(),
+  useSearchParams: () => mocks.search,
 }));
 vi.mock("@/lib/hooks/use-user", () => ({
   useUserProfile: () => ({
@@ -37,7 +42,7 @@ vi.mock("@/lib/hooks/use-user", () => ({
 }));
 vi.mock("@/lib/api", async (original) => ({
   ...(await original<typeof import("@/lib/api")>()),
-  api: { get: mocks.get, post: mocks.post },
+  api: { get: mocks.get, post: mocks.post, delete: mocks.delete },
 }));
 
 function profile(waist = 90, revision = "a".repeat(64)): UserProfile {
@@ -74,6 +79,7 @@ function mount() {
 }
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.search = new URLSearchParams();
   mocks.profile = profile();
   mocks.mutate.mockImplementation(async () => mocks.profile);
   mocks.get.mockImplementation(async (path: string) =>
@@ -167,6 +173,9 @@ it("does not start generation if the user leaves while profile saving is pending
 
 it("saves optional coloring and fabric preferences with the body profile", async () => {
   mount();
+  // The personal section starts collapsed and shows how many fields are filled.
+  expect(screen.queryByLabelText("personal.skin_depth")).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: /personalSection/ }));
   fireEvent.change(screen.getByLabelText("personal.skin_depth"), {
     target: { value: "tan" },
   });
@@ -194,6 +203,7 @@ it("saves optional coloring and fabric preferences with the body profile", async
 
 it("detects a preference-only conflict while retaining local edits", async () => {
   const view = mount();
+  fireEvent.click(screen.getByRole("button", { name: /personalSection/ }));
   fireEvent.change(screen.getByLabelText("personal.hair_color"), {
     target: { value: "black" },
   });
@@ -211,4 +221,132 @@ it("detects a preference-only conflict while retaining local edits", async () =>
     (screen.getByLabelText("personal.hair_color") as HTMLSelectElement).value,
   ).toBe("black");
   expect(screen.getByText("error.body_measurements_conflict")).toBeTruthy();
+});
+
+it("still generates rule-based looks when no AI is configured", async () => {
+  mocks.get.mockImplementation(async (path: string) =>
+    path.endsWith("/status")
+      ? { enabled: true, configured: false, available: false }
+      : { items: [], total: 0, limit: 10, offset: 0 },
+  );
+  mocks.post.mockReturnValue(new Promise(() => {}));
+  mount();
+  expect(await screen.findByTestId("ai-unavailable")).toBeTruthy();
+  const generate = screen.getByRole("button", { name: "generate" });
+  await waitFor(() => expect(generate).not.toBeDisabled());
+  fireEvent.click(generate);
+  await waitFor(() => expect(mocks.post).toHaveBeenCalledOnce());
+  expect(mocks.post.mock.calls[0][1].mode).toBe("auto");
+  expect(screen.queryByRole("button", { name: "generateRules" })).toBeNull();
+});
+
+it("deletes a history report only after confirming", async () => {
+  mocks.get.mockImplementation(async (path: string) =>
+    path.endsWith("/status")
+      ? { enabled: true, configured: true, available: true }
+      : {
+          items: [
+            {
+              id: "r1",
+              created_at: "2026-10-30T10:00:00Z",
+              summary: "Old report",
+              context: {
+                occasion: "daily",
+                style: "minimal",
+                goals: ["comfort"],
+                season: "all",
+              },
+            },
+          ],
+          total: 1,
+          limit: 10,
+          offset: 0,
+        },
+  );
+  mocks.delete.mockResolvedValue(undefined);
+  mount();
+  fireEvent.click(await screen.findByRole("button", { name: "deleteReport" }));
+  expect(mocks.delete).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("button", { name: "confirmDelete" }));
+  await waitFor(() =>
+    expect(mocks.delete).toHaveBeenCalledWith(
+      "/body-styling/recommendations/r1",
+    ),
+  );
+});
+
+const pendingReport = {
+  id: "bg1",
+  created_at: "2026-10-30T10:00:00Z",
+  model: null,
+  status: "pending",
+  input_snapshot: {
+    measurements: {},
+    context: {
+      occasion: "work",
+      style: "classic",
+      goals: ["comfort"],
+      season: "winter",
+    },
+  },
+  facts: [],
+  result: null,
+};
+
+it("polls a background report and shows it once finished", async () => {
+  mocks.post.mockResolvedValue(pendingReport);
+  let finished = false;
+  mocks.get.mockImplementation(async (path: string) => {
+    if (path.endsWith("/status"))
+      return { enabled: true, configured: true, available: true };
+    if (path.endsWith("/bg1"))
+      return finished
+        ? { ...pendingReport, status: "done", result: null, error_code: null }
+        : pendingReport;
+    return { items: [], total: 0, limit: 10, offset: 0 };
+  });
+  mount();
+  const generate = screen.getByRole("button", { name: "generate" });
+  await waitFor(() => expect(generate).not.toBeDisabled());
+  fireEvent.click(generate);
+  expect(await screen.findByTestId("report-pending")).toBeTruthy();
+  finished = true;
+  await waitFor(
+    () => expect(screen.queryByTestId("report-pending")).toBeNull(),
+    { timeout: 5000 },
+  );
+  const detailCalls = mocks.get.mock.calls.filter(([path]) =>
+    String(path).endsWith("/bg1"),
+  );
+  expect(detailCalls.length).toBeGreaterThanOrEqual(2);
+}, 10000);
+
+it("explains a failed report and retries with its original settings", async () => {
+  const failedReport = {
+    ...pendingReport,
+    status: "failed",
+    error_code: "ai_timeout",
+  };
+  mocks.post.mockResolvedValueOnce(failedReport);
+  mocks.get.mockImplementation(async (path: string) =>
+    path.endsWith("/status")
+      ? { enabled: true, configured: true, available: true }
+      : path.endsWith("/bg1")
+        ? failedReport
+        : { items: [], total: 0, limit: 10, offset: 0 },
+  );
+  mount();
+  const generate = screen.getByRole("button", { name: "generate" });
+  await waitFor(() => expect(generate).not.toBeDisabled());
+  fireEvent.click(generate);
+  const failed = await screen.findByTestId("report-failed");
+  expect(failed.textContent).toContain("error.ai_timeout");
+  mocks.post.mockReturnValue(new Promise(() => {}));
+  fireEvent.click(screen.getByRole("button", { name: "retry" }));
+  await waitFor(() => expect(mocks.post).toHaveBeenCalledTimes(2));
+  expect(mocks.post.mock.calls[1][1]).toMatchObject({
+    occasion: "work",
+    season: "winter",
+    mode: "auto",
+  });
 });

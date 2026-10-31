@@ -1,14 +1,15 @@
 import logging
-from typing import Annotated
+from datetime import UTC, date, datetime
+from typing import Annotated, Literal
 from uuid import UUID
 
-import httpx
-from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import ValidationError
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 from sqlalchemy import func, select
 
 from app.database import DbSession
 from app.models.body_styling import BodyStyleRecommendation
+from app.models.item import ClothingItem
 from app.models.user import User
 from app.schemas.body_styling import (
     BodyMeasurements,
@@ -19,14 +20,19 @@ from app.schemas.body_styling import (
     OutfitFeedback,
     ReportFeedback,
 )
-from app.schemas.styling_profile import styling_revision
+from app.schemas.styling_profile import StylingProfile, styling_revision
+from app.services.body_style_packing import MAX_DAYS, build_packing
+from app.services.body_style_today import build_today, explain_today
 from app.services.body_styling_service import (
-    InvalidStyleResponse,
     ai_status,
-    generate_body_style,
+    create_pending_style,
+    enqueue_style_job,
+    generate_rule_based_style,
     recent_style_feedback,
     user_endpoints,
 )
+from app.services.wardrobe_matching import wardrobe_match
+from app.services.weather_service import WeatherService
 from app.utils.auth import get_current_user
 from app.utils.body_measurements import body_revision
 from app.utils.rate_limit import check_rate_limit
@@ -47,8 +53,9 @@ async def status(db: DbSession, current_user: CurrentUser) -> dict[str, bool]:
 
 @router.post("/recommendations", response_model=BodyStyleResponse, status_code=201)
 async def create_recommendation(
-    request: BodyStyleRequest, db: DbSession, current_user: CurrentUser
+    request: BodyStyleRequest, response: Response, db: DbSession, current_user: CurrentUser
 ):
+    """Rule-based reports return at once (201); AI reports are queued (202) and polled."""
     if (
         request.styling_profile_revision is not None
         and request.styling_profile_revision
@@ -67,7 +74,8 @@ async def create_recommendation(
         )
     endpoints = await user_endpoints(db, current_user)
     state = ai_status(endpoints)
-    if not state["available"]:
+    use_ai = request.mode == "ai" or (request.mode == "auto" and state["available"])
+    if use_ai and not state["available"]:
         raise error(
             503,
             "ai_unavailable",
@@ -82,27 +90,21 @@ async def create_recommendation(
             "Save valid height, chest, waist and hips measurements first; inseam must be shorter than height.",
         ) from None
     await check_rate_limit(f"body_styling:{current_user.id}", limit=5, window_seconds=60)
+    feedback = await recent_style_feedback(db, current_user.id)
+    if not use_ai:
+        return await generate_rule_based_style(db, current_user, measurements, request, feedback)
+    record = await create_pending_style(db, current_user, measurements, request, feedback)
+    # Commit before enqueuing: the worker reads the row on its own connection.
+    await db.commit()
     try:
-        feedback = await recent_style_feedback(db, current_user.id)
-        return await generate_body_style(
-            db, current_user, measurements, request, endpoints, feedback
-        )
-    except InvalidStyleResponse:
-        raise error(
-            502,
-            "invalid_ai_response",
-            "The AI returned an incomplete recommendation. Please try again.",
-        ) from None
-    except (TimeoutError, httpx.TimeoutException):
-        raise error(504, "ai_timeout", "The AI service took too long. Please try again.") from None
+        record.job_id = await enqueue_style_job(record.id)
     except Exception:
-        # Provider errors may include URLs; do not log prompts, body data, credentials or raw replies.
-        logger.warning("Body styling generation failed for the configured AI service")
-        raise error(
-            502,
-            "ai_failed",
-            "The AI service could not generate a recommendation. Check the service and try again.",
-        ) from None
+        logger.error("Failed to queue body styling generation")
+        record.status, record.error_code = "failed", "queue_failed"
+    await db.commit()
+    await db.refresh(record)
+    response.status_code = 202
+    return record
 
 
 @router.get("/recommendations", response_model=BodyStyleHistory)
@@ -128,8 +130,11 @@ async def list_recommendations(
             BodyStyleHistoryEntry(
                 id=r.id,
                 created_at=r.created_at,
-                summary=r.result["summary"],
+                summary=r.result["summary"] if r.result else None,
                 context=r.input_snapshot["context"],
+                mode=r.input_snapshot.get("mode", "ai"),
+                status=r.status,
+                error_code=r.error_code,
             )
             for r in records
         ],
@@ -149,7 +154,28 @@ async def get_recommendation(recommendation_id: UUID, db: DbSession, current_use
     )
     if record is None:
         raise HTTPException(status_code=404, detail="Recommendation not found")
+    if record.status != "pending" and record.seen_at is None:
+        record.seen_at = datetime.now(UTC)
+        await db.flush()
     return record
+
+
+@router.get("/unread")
+async def unread(db: DbSession, current_user: CurrentUser) -> dict[str, int]:
+    """Finished background reports the user has not opened yet, and those still running."""
+    own = BodyStyleRecommendation.user_id == current_user.id
+    rows = (
+        await db.execute(
+            select(BodyStyleRecommendation.status, func.count())
+            .where(own, BodyStyleRecommendation.seen_at.is_(None))
+            .group_by(BodyStyleRecommendation.status)
+        )
+    ).all()
+    counts = dict(rows)
+    return {
+        "unread": counts.get("done", 0) + counts.get("failed", 0),
+        "pending": counts.get("pending", 0),
+    }
 
 
 @router.patch("/recommendations/{recommendation_id}/feedback", response_model=ReportFeedback)
@@ -166,6 +192,8 @@ async def update_feedback(
     )
     if record is None:
         raise HTTPException(status_code=404, detail="Recommendation not found")
+    if record.status != "done":
+        raise error(409, "report_not_ready", "Feedback is only possible on a finished report.")
     items = [
         item
         for item in (record.feedback or {}).get("outfits", [])
@@ -177,3 +205,136 @@ async def update_feedback(
     record.feedback = feedback.model_dump() if feedback.outfits else None
     await db.flush()
     return feedback
+
+
+@router.delete("/recommendations/{recommendation_id}", status_code=204)
+async def delete_recommendation(
+    recommendation_id: UUID, db: DbSession, current_user: CurrentUser
+) -> None:
+    record = await db.scalar(
+        select(BodyStyleRecommendation).where(
+            BodyStyleRecommendation.id == recommendation_id,
+            BodyStyleRecommendation.user_id == current_user.id,
+        )
+    )
+    if record is None:
+        raise HTTPException(status_code=404, detail="Recommendation not found")
+    await db.delete(record)
+    await db.flush()
+
+
+Occasion = Literal["daily", "work", "date", "weekend", "formal"]
+Style = Literal["minimal", "smart_casual", "street", "sporty", "classic"]
+
+
+def public_today(today: dict) -> dict:
+    return {key: value for key, value in today.items() if not key.startswith("_")}
+
+
+@router.get("/today")
+async def today_outfit(
+    db: DbSession,
+    current_user: CurrentUser,
+    occasion: Occasion | None = None,
+    style: Style | None = None,
+    reroll: int = Query(0, ge=0, le=50),
+) -> dict:
+    """A rule-based look for today; no AI call, so it is instant and free."""
+    return public_today(await build_today(db, current_user, occasion, style, reroll))
+
+
+@router.post("/today/explain")
+async def explain_today_outfit(
+    db: DbSession,
+    current_user: CurrentUser,
+    occasion: Occasion | None = None,
+    style: Style | None = None,
+    reroll: int = Query(0, ge=0, le=50),
+) -> dict[str, str]:
+    endpoints = await user_endpoints(db, current_user)
+    if not ai_status(endpoints)["available"]:
+        raise error(503, "ai_unavailable", "Enable and configure a text AI service first.")
+    await check_rate_limit(f"body_styling_today:{current_user.id}", limit=10, window_seconds=60)
+    today = await build_today(db, current_user, occasion, style, reroll)
+    try:
+        text = await explain_today(today, endpoints, current_user.locale)
+    except Exception:
+        logger.warning("Today's outfit explanation failed for the configured AI service")
+        raise error(502, "ai_failed", "The AI could not explain this look. Try again.") from None
+    return {"text": text}
+
+
+@router.get("/recommendations/{recommendation_id}/wardrobe-match")
+async def recommendation_wardrobe_match(
+    recommendation_id: UUID, db: DbSession, current_user: CurrentUser
+) -> dict:
+    record = await db.scalar(
+        select(BodyStyleRecommendation).where(
+            BodyStyleRecommendation.id == recommendation_id,
+            BodyStyleRecommendation.user_id == current_user.id,
+        )
+    )
+    if record is None:
+        raise HTTPException(status_code=404, detail="Recommendation not found")
+    if record.status != "done":
+        raise error(409, "report_not_ready", "The report is not finished yet.")
+    items = (
+        await db.scalars(
+            select(ClothingItem).where(
+                ClothingItem.user_id == current_user.id,
+                ClothingItem.is_archived.is_(False),
+            )
+        )
+    ).all()
+    profile = StylingProfile.model_validate(record.input_snapshot.get("styling_profile") or {})
+    return wardrobe_match(record.result, list(items), profile)
+
+
+class PackingRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    start_date: date
+    end_date: date
+    occasions: list[Occasion] = Field(default_factory=lambda: ["daily"], min_length=1, max_length=7)
+    style: Style = "minimal"
+    # Destination; omitted means the saved home location (or none, using calendar seasons).
+    city: str | None = Field(default=None, max_length=100)
+
+    @model_validator(mode="after")
+    def check_dates(self):
+        days = (self.end_date - self.start_date).days + 1
+        if days < 1 or days > MAX_DAYS:
+            raise ValueError(f"the trip must last between 1 and {MAX_DAYS} days")
+        return self
+
+
+@router.post("/packing")
+async def packing_list(data: PackingRequest, db: DbSession, current_user: CurrentUser) -> dict:
+    """Computed packing list for a trip; no AI involved."""
+    location = None
+    if data.city:
+        location = await WeatherService().geocode_location_name(data.city)
+        if location is None:
+            raise error(422, "unknown_city", "That city could not be found.")
+    elif current_user.location_lat is not None and current_user.location_lon is not None:
+        location = (
+            float(current_user.location_lat),
+            float(current_user.location_lon),
+            current_user.location_name,
+        )
+    items = (
+        await db.scalars(
+            select(ClothingItem).where(
+                ClothingItem.user_id == current_user.id,
+                ClothingItem.is_archived.is_(False),
+            )
+        )
+    ).all()
+    return await build_packing(
+        current_user,
+        data.start_date,
+        data.end_date,
+        list(data.occasions),
+        data.style,
+        location,
+        list(items),
+    )
