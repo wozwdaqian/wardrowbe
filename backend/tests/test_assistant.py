@@ -12,7 +12,7 @@ from app.models.body_styling import BodyStyleRecommendation
 from app.models.item import ClothingItem
 from app.models.user import User
 from app.schemas.body_styling import BodyMeasurements, BodyStyleRequest
-from app.services import assistant_service
+from app.services import assistant_service, assistant_tools
 from app.services.assistant_service import MAX_TOOL_CALLS, Assistant
 from app.services.body_styling_service import generate_rule_based_style
 
@@ -398,3 +398,19 @@ async def test_regenerate_outfit_with_rules_and_with_ai(db_session, test_user, m
     )
     with pytest.raises(editing.EditError):
         await editing.regenerate_outfit(db_session, test_user, record, 2, "x", None, use_ai=True)
+
+
+def test_long_instructions_are_clipped_in_summaries():
+    assert assistant_tools.clip("短指令") == "短指令"
+    clipped = assistant_tools.clip("将第二套改为更适合约会的搭配：保留简约风格，兼顾比例平衡和舒适")
+    assert len(clipped) == 24 and clipped.endswith("…")
+
+
+@pytest.mark.asyncio
+async def test_delete_proposal_names_the_looks(ai, db_session, test_user):
+    conversation = await setup(db_session, test_user)
+    record = await report(db_session, test_user)
+    ai.script = [call("delete_report", report_id=str(record.id)), say("ok")]
+    events = await run(db_session, test_user, conversation, "删除")
+    summary = next(e["action"]["summary"] for e in events if e["type"] == "action")
+    assert record.result["outfits"][0]["title"][:10] in summary

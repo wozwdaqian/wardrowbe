@@ -385,8 +385,8 @@ async def regenerate(ctx: ToolContext, args: RegenerateArgs) -> Outcome:
             ],
         },
         summary=ctx.text(
-            f"按“{args.instruction}”重新生成了第 {args.outfit_index + 1} 套，存为新报告",
-            f'Regenerated look {args.outfit_index + 1} ("{args.instruction}") as a new report',
+            f"按“{clip(args.instruction)}”重新生成了第 {args.outfit_index + 1} 套，存为新报告",
+            f'Regenerated look {args.outfit_index + 1} ("{clip(args.instruction)}") as a new report',
         ),
         undo={"report_id": str(child.id)},
     )
@@ -579,6 +579,10 @@ def merged_profile(user: User, args: ProfileArgs) -> tuple[dict, dict]:
     return measurements, profile
 
 
+def clip(text: str, limit: int = 24) -> str:
+    return text if len(text) <= limit else text[: limit - 1] + "…"
+
+
 def shown(value) -> str:
     """88.0 -> "88": measurements are floats, but people write whole numbers."""
     if value is None:
@@ -657,7 +661,11 @@ async def undo_profile(ctx: ToolContext, undo: dict) -> None:
 async def propose_delete(ctx: ToolContext, args: ReportArgs) -> tuple[str, dict]:
     record = await own_report(ctx, args.report_id)
     when = record.created_at.astimezone(UTC).strftime("%Y-%m-%d %H:%M")
-    return ctx.text(f"删除 {when} 的报告", f"Delete the report from {when}"), args.model_dump()
+    # Reports made in the same minute need their looks to be told apart.
+    titles = clip(" / ".join(o["title"] for o in (record.result or {}).get("outfits", [])), 40)
+    zh = f"删除 {when} 的报告" + (f"（{titles}）" if titles else "")
+    en = f"Delete the report from {when}" + (f" ({titles})" if titles else "")
+    return ctx.text(zh, en), args.model_dump()
 
 
 ROW_FIELDS = (

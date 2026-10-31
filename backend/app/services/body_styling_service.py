@@ -173,8 +173,9 @@ Each garment has a pattern (solid/stripe/check/herringbone/dot); shoes are solid
 most one bold pattern (stripe/check/dot). No wardrobe IDs, products, shopping links, HTML or SVG. Use the supplied schema's
 garment enums; bottom rise is required, other garments' rise is null. Colors must be six-digit hex.
 Never write measurement/ratio numbers yourself, even when they were provided. Use {{height}}, {{waist}},
-{{waist_chest_ratio}}, etc. The server expands these tokens into labelled real values. Tokens in an entry
-must also be included in that entry's evidence. Digits are only allowed for small tailoring adjustments
+{{waist_chest_ratio}}, etc. The server expands these tokens into labelled real values, so write the token
+alone, not after its label. Tokens in an entry must also be included in that entry's evidence. Each
+body_reason must name at least one body fact from its evidence, preferably as its token. Digits are only allowed for small tailoring adjustments
 and counts (e.g. "show 1 cm of shirt cuff", "roll the hem twice"); never body measurements, weights,
 percentages or ratios.
 Do not discuss missing measurements in prose; the server generates missing-data limitations itself.

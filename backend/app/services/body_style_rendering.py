@@ -224,6 +224,10 @@ def resolve_text(text: str, facts: list[BodyFact], evidence: list[str] | None, z
         unit = fact.unit if fact.unit in {"cm", "kg"} else ""
         return f"{FACT_NAMES[fact.id][index]} {value}{unit}"
 
+    # Tokens expand to "label value", so drop a label the model already wrote before its token.
+    for ref in set(references):
+        labels = "|".join(re.escape(label) for label in FACT_NAMES[ref])
+        text = re.sub(rf"(?:{labels})\s*[:：]?\s*(?=\{{\{{{ref}\}}\}})", "", text, flags=re.I)
     rendered = TOKEN.sub(replace, text)
     # Resolve evidence IDs that a model repeats in prose into readable labels.
     for identifier in re.findall(r"\b[a-z]+_[a-z_]+\b", rendered):

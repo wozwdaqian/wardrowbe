@@ -23,6 +23,20 @@ BODY_EVIDENCE = {
     "waist_hips_ratio",
     "inseam_height_ratio",
 }
+# Paraphrases that still name the cited body fact ("臀部" for hips); every word in a group must appear.
+BODY_PART_TERMS = {
+    "height": [("身高",), ("个子",), ("tall",), ("height",)],
+    "chest": [("胸",), ("chest",)],
+    "waist": [("腰",), ("waist",)],
+    "hips": [("臀",), ("髋",), ("hip",), ("seat",)],
+    "inseam": [("腿长",), ("inseam",), ("leg length",)],
+    "shoulder_type": [("肩",), ("shoulder",)],
+    "shoulder_width": [("肩",), ("shoulder",)],
+    "thigh": [("大腿",), ("thigh",)],
+    "waist_chest_ratio": [("胸", "腰"), ("chest", "waist")],
+    "waist_hips_ratio": [("腰", "臀"), ("腰", "髋"), ("waist", "hip")],
+    "inseam_height_ratio": [("腿", "身"), ("leg", "height"), ("leg", "tall")],
+}
 GENERIC = ["适合你", "很适合", "suits you", "looks great", "flattering"]
 
 
@@ -38,6 +52,13 @@ def _draft_garment(garment):
     return garment.model_copy(update={"material": garment.material_code})
 
 
+def mentions(text: str, fact_id: str, zh: bool) -> bool:
+    if fact_id in FACT_NAMES and FACT_NAMES[fact_id][0 if zh else 1] in text:
+        return True
+    lowered = text.lower()
+    return any(all(word in lowered for word in group) for group in BODY_PART_TERMS.get(fact_id, []))
+
+
 def quality_failures(content: BodyStyleContent, rules: StyleRules, zh: bool) -> list[str]:
     failures = []
     for index, outfit in enumerate(content.outfits, 1):
@@ -45,8 +66,7 @@ def quality_failures(content: BodyStyleContent, rules: StyleRules, zh: bool) -> 
         failures += [f"outfit {index}: {e}" for e in outfit_violations(garments, rules)]
         if not set(outfit.evidence) & BODY_EVIDENCE:
             failures.append(f"outfit {index}: cites no body measurement or proportion")
-        labels = [FACT_NAMES[e][0 if zh else 1] for e in outfit.evidence if e in FACT_NAMES]
-        if not any(label in outfit.body_reason for label in labels):
+        if not any(mentions(outfit.body_reason, e, zh) for e in outfit.evidence):
             failures.append(f"outfit {index}: body_reason does not mention its evidence")
         if len(outfit.body_reason) < 20 or any(g in outfit.body_reason for g in GENERIC):
             failures.append(f"outfit {index}: body_reason is generic")

@@ -191,3 +191,15 @@ def test_old_contract_garments_still_load_without_pattern():
             del garment["pattern"]
     loaded = BodyStyleContent.model_validate(stored)
     assert loaded.outfits[0].garments[0].pattern == "solid"
+
+
+@pytest.mark.parametrize(
+    ("text", "zh", "expected"),
+    [
+        ("结合腰围{{waist}}与臀围：{{hips}}选裤。", True, "结合腰围 90cm与臀围 102cm选裤。"),
+        ("结合{{waist}}选裤。", True, "结合腰围 90cm选裤。"),
+        ("Your waist {{waist}} sets the rise.", False, "Your waist 90cm sets the rise."),
+    ],
+)
+def test_label_written_before_its_token_is_not_repeated(text, zh, expected):
+    assert resolve_text(text, FACTS, ["waist", "hips"], zh) == expected
