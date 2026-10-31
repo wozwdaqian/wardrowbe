@@ -435,3 +435,31 @@ async def test_profile_summary_names_catalog_values(ai, db_session, test_user):
     events = await run(db_session, test_user, conversation, "别给我推荐羊毛")
     summary = next(e["action"]["summary"] for e in events if e["type"] == "action")
     assert summary.endswith("— → 羊毛") and "wool" not in summary
+
+
+@pytest.mark.asyncio
+async def test_skin_is_summarised_by_its_everyday_name(ai, db_session, test_user):
+    conversation = await setup(db_session, test_user)
+    ai.script = [
+        call("update_profile", styling_profile={"skin_depth": "tan", "undertone": "warm"}),
+        say("ok"),
+    ]
+    events = await run(db_session, test_user, conversation, "我是黄黑皮")
+    summary = next(e["action"]["summary"] for e in events if e["type"] == "action")
+    assert summary == "更新资料：肤色: — → 黄黑皮"
+    # A pair without an everyday name falls back to the two separate fields.
+    ai.script = [call("update_profile", styling_profile={"undertone": "cool"}), say("ok")]
+    events = await run(db_session, test_user, conversation, "其实我偏冷")
+    summary = next(e["action"]["summary"] for e in events if e["type"] == "action")
+    assert "自述底色倾向" in summary and "肤色:" not in summary
+
+
+def test_every_skin_type_is_a_valid_profile_and_named_in_the_prompt():
+    from app.schemas.styling_profile import SKIN_TYPES, StylingProfile, skin_type
+    from app.services.assistant_service import SKIN_TYPE_PROMPT
+
+    for key, entry in SKIN_TYPES.items():
+        profile = StylingProfile(skin_depth=entry["skin_depth"], undertone=entry["undertone"])
+        assert skin_type(profile.model_dump()) == key
+        assert entry["zh"] in SKIN_TYPE_PROMPT
+    assert len({(e["skin_depth"], e["undertone"]) for e in SKIN_TYPES.values()}) == len(SKIN_TYPES)

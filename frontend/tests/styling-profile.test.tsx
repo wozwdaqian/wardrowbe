@@ -89,3 +89,47 @@ it("renders local fabric patterns from structured construction and keeps colors"
   expect(output).not.toContain("<image");
   expect(output).not.toContain("<script");
 });
+it("picks skin by everyday names and keeps unnamed pairs editable", () => {
+  const changes: StylingProfile[] = [];
+  function Editor({ initial }: { initial: StylingProfile }) {
+    const [value, setValue] = useState<StylingProfile>(initial);
+    return (
+      <StylingProfileEditor
+        value={value}
+        onChange={(next) => {
+          changes.push(next);
+          setValue(next);
+        }}
+      />
+    );
+  }
+  const { unmount } = render(<Editor initial={{}} />);
+  expect(screen.getByTestId("skin-type-yellow_dark").textContent).toContain(
+    "黄黑皮",
+  );
+  fireEvent.click(screen.getByTestId("skin-type-yellow_dark"));
+  expect(changes.at(-1)).toMatchObject({
+    skin_depth: "tan",
+    undertone: "warm",
+  });
+  expect(screen.getByTestId("skin-type-yellow_dark")).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  fireEvent.click(screen.getByTestId("skin-type-cool_fair"));
+  expect(changes.at(-1)).toMatchObject({
+    skin_depth: "fair",
+    undertone: "cool",
+  });
+  fireEvent.click(screen.getByTestId("skin-type-cool_fair"));
+  expect(changes.at(-1)).toMatchObject({ skin_depth: null, undertone: null });
+  unmount();
+
+  render(<Editor initial={{ skin_depth: "deep", undertone: "warm" }} />);
+  expect(screen.getByText("personal.skinCustom")).toBeTruthy();
+  expect(
+    screen
+      .queryAllByRole("button", { pressed: true })
+      .some((b) => b.getAttribute("data-testid")?.startsWith("skin-type-")),
+  ).toBe(false);
+});

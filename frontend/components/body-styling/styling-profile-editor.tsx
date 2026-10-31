@@ -4,9 +4,18 @@ import { useLocale, useTranslations } from "next-intl";
 import {
   catalogLabel,
   PROFILE_CATALOGS,
+  SKIN_TYPES,
+  skinType,
   STYLING_CATALOG,
   StylingProfile,
 } from "@/lib/body-styling";
+
+type Select =
+  | "skin_depth"
+  | "undertone"
+  | "hair_color"
+  | "eye_color"
+  | "contrast_preference";
 
 type Props = {
   value: StylingProfile;
@@ -94,6 +103,37 @@ export function StylingProfileEditor({ value, onChange }: Props) {
       </div>
     );
   }
+  function select(field: Select) {
+    return (
+      <div key={field}>
+        <label
+          htmlFor={"styling-" + field}
+          className="mb-1.5 block text-xs font-medium"
+        >
+          {t("personal." + field)}
+        </label>
+        <select
+          id={"styling-" + field}
+          value={value[field] || ""}
+          onChange={(event) =>
+            onChange({ ...value, [field]: event.target.value || null })
+          }
+          className="h-10 w-full rounded-md border border-input bg-background px-2 text-xs"
+        >
+          <option value="">{t("personal.unknown")}</option>
+          {Object.keys(STYLING_CATALOG[field]).map((option) => (
+            <option key={option} value={option}>
+              {catalogLabel(field, option, locale)}
+            </option>
+          ))}
+        </select>
+      </div>
+    );
+  }
+  const zh = locale.startsWith("zh");
+  const current = skinType(value);
+  // A depth/undertone pair without an everyday name stays visible in the fine-tune fields.
+  const custom = !current && !!(value.skin_depth || value.undertone);
   return (
     <div
       className="space-y-3 border-t pt-4"
@@ -109,43 +149,64 @@ export function StylingProfileEditor({ value, onChange }: Props) {
         <summary className="cursor-pointer text-sm font-medium">
           {t("personal.appearance")}
         </summary>
+        <p className="mt-3 text-xs font-medium" id="label-skin-type">
+          {t("personal.skin_type")}
+        </p>
+        <div
+          className="mt-1.5 grid grid-cols-2 gap-1.5 sm:grid-cols-3"
+          role="group"
+          aria-labelledby="label-skin-type"
+        >
+          {Object.entries(SKIN_TYPES).map(([key, entry]) => {
+            const selected = current === key;
+            return (
+              <button
+                type="button"
+                key={key}
+                aria-pressed={selected}
+                data-testid={`skin-type-${key}`}
+                // A second tap clears the choice.
+                onClick={() =>
+                  onChange({
+                    ...value,
+                    skin_depth: selected ? null : entry.skin_depth,
+                    undertone: selected ? null : entry.undertone,
+                  })
+                }
+                className={`flex items-center gap-2 rounded-lg border px-2 py-1.5 text-left transition-colors ${selected ? "border-emerald-800 bg-emerald-50 dark:border-emerald-500 dark:bg-emerald-950" : "bg-background hover:bg-muted"}`}
+              >
+                <span
+                  aria-hidden="true"
+                  className="h-6 w-6 shrink-0 rounded-full border border-black/10"
+                  style={{ backgroundColor: entry.swatch }}
+                />
+                <span className="min-w-0">
+                  <span className="block text-xs font-medium">
+                    {zh ? entry.zh : entry.en}
+                  </span>
+                  <span className="block text-[11px] leading-4 text-muted-foreground">
+                    {zh ? entry.hint_zh : entry.hint_en}
+                  </span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
         <p className="mt-2 text-xs leading-6 text-muted-foreground">
           {t("personal.skinHelp")}
         </p>
+        <details className="mt-1" open={custom}>
+          <summary className="cursor-pointer text-xs text-muted-foreground">
+            {custom ? t("personal.skinCustom") : t("personal.skinFineTune")}
+          </summary>
+          <div className="mt-2 grid grid-cols-2 gap-3">
+            {(["skin_depth", "undertone"] as const).map(select)}
+          </div>
+        </details>
         <div className="mt-3 grid grid-cols-2 gap-3">
-          {(
-            [
-              "skin_depth",
-              "undertone",
-              "hair_color",
-              "eye_color",
-              "contrast_preference",
-            ] as const
-          ).map((field) => (
-            <div key={field}>
-              <label
-                htmlFor={"styling-" + field}
-                className="mb-1.5 block text-xs font-medium"
-              >
-                {t("personal." + field)}
-              </label>
-              <select
-                id={"styling-" + field}
-                value={value[field] || ""}
-                onChange={(event) =>
-                  onChange({ ...value, [field]: event.target.value || null })
-                }
-                className="h-10 w-full rounded-md border border-input bg-background px-2 text-xs"
-              >
-                <option value="">{t("personal.unknown")}</option>
-                {Object.keys(STYLING_CATALOG[field]).map((option) => (
-                  <option key={option} value={option}>
-                    {catalogLabel(field, option, locale)}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ))}
+          {(["hair_color", "eye_color", "contrast_preference"] as const).map(
+            select,
+          )}
         </div>
       </details>
       <details className="rounded-lg border p-3">

@@ -36,8 +36,10 @@ from app.schemas.item import ItemCreate
 from app.schemas.styling_profile import (
     CATALOG,
     PROFILE_CATALOGS,
+    SKIN_TYPES,
     STYLE_DATA,
     StylingProfile,
+    skin_type,
     styling_revision,
 )
 from app.services.body_style_editing import (
@@ -734,6 +736,14 @@ def profile_value(key: str, value, zh: bool) -> str:
     return ("、" if zh else ", ").join(names)
 
 
+def skin_name(profile: dict, zh: bool) -> str | None:
+    """ "冷白皮" for a depth + undertone pair the user would call that; None when it has no name."""
+    if not profile.get("skin_depth") and not profile.get("undertone"):
+        return "—"
+    key = skin_type(profile)
+    return SKIN_TYPES[key]["zh" if zh else "en"] if key else None
+
+
 async def propose_profile(ctx: ToolContext, args: ProfileArgs) -> tuple[str, dict]:
     measurements, profile = merged_profile(ctx.user, args)
     old_m = ctx.user.body_measurements or {}
@@ -746,13 +756,17 @@ async def propose_profile(ctx: ToolContext, args: ProfileArgs) -> tuple[str, dic
         if old_m.get(key) != measurements.get(key):
             label = FACT_NAMES.get(key, (key, key))[index]
             lines.append(f"{label} {shown(old_m.get(key))} → {shown(measurements.get(key))}")
-    for key in sorted(set(old_p) | set(profile)):
-        if old_p.get(key) != profile.get(key):
-            label = FACT_NAMES.get(key, (key, key))[index]
-            before, after = (
-                profile_value(key, v, ctx.zh) for v in (old_p.get(key), profile.get(key))
-            )
-            lines.append(f"{label}: {before} → {after}")
+    changed = {k for k in set(old_p) | set(profile) if old_p.get(k) != profile.get(k)}
+    skin = {"skin_depth", "undertone"}
+    names = [skin_name(p, ctx.zh) for p in (old_p, profile)]
+    # People say "黄黑皮", not "depth tan, undertone warm": show the pair by that name.
+    if changed & skin and None not in names:
+        changed -= skin
+        lines.append(ctx.text("肤色", "Skin") + f": {names[0]} → {names[1]}")
+    for key in sorted(changed):
+        label = FACT_NAMES.get(key, (key, key))[index]
+        before, after = (profile_value(key, v, ctx.zh) for v in (old_p.get(key), profile.get(key)))
+        lines.append(f"{label}: {before} → {after}")
     if not lines:
         raise ToolError("these values are already saved")
     stored = {

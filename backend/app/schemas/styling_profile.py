@@ -27,6 +27,19 @@ PROFILE_CATALOGS = {
     "fabric_preferences": "fabric_preferences",
     "fit_issues": "fit_issues",
 }
+# Everyday names such as 冷白皮 or 黄黑皮, each a fixed skin depth + undertone pair.
+SKIN_TYPES = CATALOG["skin_types"]
+
+
+def skin_type(profile: dict) -> str | None:
+    """The everyday skin type matching the stored depth and undertone, if any."""
+    for key, entry in SKIN_TYPES.items():
+        if (entry["skin_depth"], entry["undertone"]) == (
+            profile.get("skin_depth"),
+            profile.get("undertone"),
+        ):
+            return key
+    return None
 
 
 class StylingProfile(BaseModel):

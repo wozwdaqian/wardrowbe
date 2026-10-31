@@ -29,6 +29,29 @@ export const PROFILE_CATALOGS = {
   fabric_preferences: "fabric_preferences",
   fit_issues: "fit_issues",
 } as const;
+// Everyday names such as 冷白皮, each a fixed skin depth + undertone pair.
+export const SKIN_TYPES = catalog.skin_types as Record<
+  string,
+  {
+    zh: string;
+    en: string;
+    hint_zh: string;
+    hint_en: string;
+    skin_depth: NonNullable<StylingProfile["skin_depth"]>;
+    undertone: StylingProfile["undertone"];
+    swatch: string;
+  }
+>;
+export function skinType(profile: StylingProfile) {
+  if (!profile.skin_depth && !profile.undertone) return null;
+  return (
+    Object.keys(SKIN_TYPES).find(
+      (key) =>
+        SKIN_TYPES[key].skin_depth === (profile.skin_depth ?? null) &&
+        (SKIN_TYPES[key].undertone ?? null) === (profile.undertone ?? null),
+    ) ?? null
+  );
+}
 export function catalogLabel(
   group: keyof typeof catalog,
   value: string,

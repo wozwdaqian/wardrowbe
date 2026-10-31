@@ -35,6 +35,71 @@
       "en": "Neutral (self-reported)"
     }
   },
+  "skin_types": {
+    "cool_fair": {
+      "zh": "冷白皮",
+      "en": "Cool fair",
+      "hint_zh": "白里透粉，晒后容易发红",
+      "hint_en": "Pinkish fair, burns rather than tans",
+      "skin_depth": "fair",
+      "undertone": "cool",
+      "swatch": "#f4e2de"
+    },
+    "warm_fair": {
+      "zh": "暖白皮",
+      "en": "Warm fair",
+      "hint_zh": "白里带一点黄或桃色",
+      "hint_en": "Fair with a peach or golden cast",
+      "skin_depth": "fair",
+      "undertone": "warm",
+      "swatch": "#f5e1c9"
+    },
+    "natural": {
+      "zh": "自然白",
+      "en": "Neutral light",
+      "hint_zh": "不算很白，看不出明显冷暖",
+      "hint_en": "Light, neither pink nor yellow",
+      "skin_depth": "light",
+      "undertone": "neutral",
+      "swatch": "#ebd0b5"
+    },
+    "yellow": {
+      "zh": "黄皮",
+      "en": "Warm medium",
+      "hint_zh": "常见的黄一白、黄二白",
+      "hint_en": "The common golden-beige tone",
+      "skin_depth": "medium",
+      "undertone": "warm",
+      "swatch": "#ddb98e"
+    },
+    "yellow_dark": {
+      "zh": "黄黑皮",
+      "en": "Warm tan",
+      "hint_zh": "偏黄又偏深，晒后很快变黑",
+      "hint_en": "Golden and darker, tans quickly",
+      "skin_depth": "tan",
+      "undertone": "warm",
+      "swatch": "#b98a5e"
+    },
+    "wheat": {
+      "zh": "小麦皮",
+      "en": "Neutral tan",
+      "hint_zh": "健康的晒色，不特别黄",
+      "hint_en": "An even sun-kissed tan",
+      "skin_depth": "tan",
+      "undertone": "neutral",
+      "swatch": "#c49a72"
+    },
+    "dark": {
+      "zh": "黑皮",
+      "en": "Deep",
+      "hint_zh": "肤色很深",
+      "hint_en": "Deep skin",
+      "skin_depth": "deep",
+      "undertone": null,
+      "swatch": "#7a5236"
+    }
+  },
   "hair_color": {
     "black": {
       "zh": "黑色",

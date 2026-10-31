@@ -23,6 +23,7 @@ from app.models.assistant import (
     AssistantMessage,
 )
 from app.models.user import User
+from app.schemas.styling_profile import SKIN_TYPES
 from app.services.ai_service import AIService
 from app.services.assistant_tools import TOOLS, Outcome, ToolContext, ToolError
 from app.services.body_styling_service import ai_status, user_endpoints
@@ -35,6 +36,11 @@ HISTORY_MESSAGES = 40
 MAX_IMAGES = 4
 # Only the latest photo messages are sent as pixels; older ones are referred to by id.
 VISIBLE_IMAGE_MESSAGES = 2
+
+SKIN_TYPE_PROMPT = "; ".join(
+    f"{t['zh']} ({t['en']}) = {t['skin_depth']} + {t['undertone'] or 'null'}"
+    for t in SKIN_TYPES.values()
+)
 
 SYSTEM_PROMPT = """You are Wardrowbe's styling assistant for one user. You can read their body profile,
 styling preferences, reports, wardrobe, weather and wear history through tools, and change things only
@@ -58,6 +64,9 @@ through the write tools. Rules:
   For a single garment the user wants to keep, call add_wardrobe_item with what you see. For a
   shop or product photo, call assess_purchase and base the advice on its result. If a photo is
   unclear or shows several garments, ask before adding anything.
+- Skin is stored as skin_depth + undertone. Everyday skin types map to fixed pairs:
+  {skin_types}. When the user names one ("我是黄黑皮"), save both fields of that pair
+  (null clears undertone).
 - styling_profile.preferred_styles holds the user's Japanese sub-styles from the style quiz (main
   one first); follow that direction. When the user has none and is unsure of their style, suggest the
   style explorer at /dashboard/body-styling/style.
@@ -229,7 +238,7 @@ class Assistant:
 
     def system(self) -> str:
         language = "Simplified Chinese" if self.user.locale.startswith("zh") else "English"
-        prompt = SYSTEM_PROMPT.format(language=language)
+        prompt = SYSTEM_PROMPT.format(language=language, skin_types=SKIN_TYPE_PROMPT)
         if not self.native_tools:
             prompt += JSON_PROTOCOL + json.dumps([t.schema()["function"] for t in TOOLS.values()])
         return prompt
