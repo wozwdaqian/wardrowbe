@@ -16,6 +16,8 @@ export type StylingProfile = {
   fit_issues?: (keyof typeof catalog.fit_issues)[];
   // Set by the style quiz; the main Japanese sub-style first.
   preferred_styles?: JapaneseStyleId[];
+  dress_code?: "suit" | "business_casual" | "smart_casual" | "casual";
+  budget?: "budget" | "mid" | "premium";
 };
 export const PROFILE_CATALOGS = {
   skin_depth: "skin_depth",

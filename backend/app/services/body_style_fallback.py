@@ -462,15 +462,44 @@ COLOR_TEXTS = {
 }
 
 
-def direction_for(profile: StylingProfile, style: str) -> list[str]:
+# Styles that already work in an office; anything else gets a kireime weekday look when work
+# asks for more than casual clothes.
+OFFICE_READY = {
+    "suit": {"kireime"},
+    "business_casual": {"kireime", "ivy"},
+    "smart_casual": {"kireime", "ivy", "normcore", "natural", "mode", "amekaji"},
+}
+
+
+def weekday_style(main: str, dress_code: str | None) -> str:
+    if dress_code in OFFICE_READY and main not in OFFICE_READY[dress_code]:
+        return "kireime"
+    return main
+
+
+def styles_for(profile: StylingProfile, occasion: str | None = None) -> list[str]:
+    """The style direction for an occasion: work days may switch to the weekday style."""
+    styles = list(profile.preferred_styles)
+    if styles and occasion == "work":
+        weekday = weekday_style(styles[0], profile.dress_code)
+        if weekday != styles[0]:
+            return [weekday]
+    return styles
+
+
+def direction_for(profile: StylingProfile, style: str, occasion: str | None = None) -> list[str]:
     """The quiz's sub-styles, when the requested broad style is the main one's family.
 
-    An explicit different broad style (say classic for a Cityboy) keeps the generic looks.
+    An explicit different broad style (say classic for a Cityboy) keeps the generic looks. On
+    work days the weekday style also accepts the main style's family, which forms default to.
     """
-    styles = list(profile.preferred_styles)
-    if not styles or STYLES[styles[0]]["base_style"] != style:
+    styles = styles_for(profile, occasion)
+    if not styles:
         return []
-    return styles
+    families = {STYLES[styles[0]]["base_style"]}
+    if profile.preferred_styles:
+        families.add(STYLES[profile.preferred_styles[0]]["base_style"])
+    return styles if style in families else []
 
 
 def direction_looks(direction: list[str]) -> list[tuple[str, int]]:

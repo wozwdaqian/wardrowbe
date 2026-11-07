@@ -35,6 +35,7 @@ from app.schemas.body_styling import (
 from app.schemas.item import ItemCreate
 from app.schemas.styling_profile import (
     CATALOG,
+    LIFESTYLE,
     PROFILE_CATALOGS,
     SKIN_TYPES,
     STYLE_DATA,
@@ -728,6 +729,8 @@ def profile_value(key: str, value, zh: bool) -> str:
     if key == "preferred_styles":
         names = [STYLE_NAMES.get(v, {}).get("zh" if zh else "en", v) for v in value]
         return ("、" if zh else ", ").join(names)
+    if key in LIFESTYLE:
+        return LIFESTYLE[key].get(value, {}).get("zh" if zh else "en", str(value))
     if key not in PROFILE_CATALOGS:
         return str(value)
     vocabulary = CATALOG[PROFILE_CATALOGS[key]]

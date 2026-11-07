@@ -21,8 +21,13 @@ import { queryKeys } from "@/lib/hooks/query-keys";
 import { useUserProfile } from "@/lib/hooks/use-user";
 import {
   asOutfit,
+  brandGroups,
+  BRAND_TIERS,
+  DRESS_CODES,
   styleName,
   type Answer,
+  type Lifestyle,
+  type StylePlan,
   type StyleCard,
   type StyleDetail,
   type StyleResult,
@@ -58,6 +63,12 @@ export default function StyleExplorePage() {
   const [answers, setAnswers] = useState<Record<string, Answer>>({});
   const [result, setResult] = useState<StyleResult | null>(null);
   const [saved, setSaved] = useState<JapaneseStyleId[] | null>(null);
+  // Starts from the saved answers; changing one recomputes the result.
+  const [lifestyle, setLifestyle] = useState<Lifestyle | null>(null);
+  const currentLifestyle: Lifestyle = lifestyle ?? {
+    dress_code: profile?.styling_profile?.dress_code,
+    budget: profile?.styling_profile?.budget,
+  };
 
   const start = useMutation({
     mutationFn: () => api.get<{ cards: StyleCard[] }>(`${BASE}/round-one`),
@@ -75,7 +86,8 @@ export default function StyleExplorePage() {
     mutationFn: (all: Record<string, Answer>) =>
       api.post<{ cards: StyleCard[] }>(`${BASE}/round-two`, { answers: all }),
     onSuccess: (data, all) => {
-      if (!data.cards.length) return finish.mutate(all);
+      if (!data.cards.length)
+        return finish.mutate({ all: all, life: currentLifestyle });
       setCards(data.cards);
       setPosition(0);
       setStage("round2");
@@ -83,8 +95,13 @@ export default function StyleExplorePage() {
     meta: { toastsOwnErrors: true },
   });
   const finish = useMutation({
-    mutationFn: (all: Record<string, Answer>) =>
-      api.post<StyleResult>(`${BASE}/result`, { answers: all }),
+    mutationFn: ({
+      all,
+      life,
+    }: {
+      all: Record<string, Answer>;
+      life: Lifestyle;
+    }) => api.post<StyleResult>(`${BASE}/result`, { answers: all, ...life }),
     onSuccess: (data) => {
       setResult(data);
       setStage("result");
@@ -95,6 +112,7 @@ export default function StyleExplorePage() {
     mutationFn: (styles: JapaneseStyleId[]) =>
       api.patch<{ preferred_styles: JapaneseStyleId[] }>(`${BASE}/styles`, {
         styles,
+        ...currentLifestyle,
       }),
     onSuccess: (data) => {
       setSaved(data.preferred_styles);
@@ -114,7 +132,7 @@ export default function StyleExplorePage() {
     setAnswers(next);
     if (position + 1 < cards.length) setPosition(position + 1);
     else if (stage === "round1") deeper.mutate(next);
-    else finish.mutate(next);
+    else finish.mutate({ all: next, life: currentLifestyle });
   }
 
   return (
@@ -193,6 +211,14 @@ export default function StyleExplorePage() {
       {stage === "result" && result && (
         <ResultView
           result={result}
+          lifestyle={currentLifestyle}
+          refining={finish.isPending}
+          onLifestyle={(change) => {
+            const life = { ...currentLifestyle, ...change };
+            setLifestyle(life);
+            setSaved(null);
+            finish.mutate({ all: answers, life });
+          }}
           saved={saved}
           saving={save.isPending}
           onSave={() => save.mutate(result.styles.map((s) => s.id))}
@@ -290,12 +316,18 @@ function QuizCard({
 
 function ResultView({
   result,
+  lifestyle,
+  refining,
+  onLifestyle,
   saved,
   saving,
   onSave,
   onRetake,
 }: {
   result: StyleResult;
+  lifestyle: Lifestyle;
+  refining: boolean;
+  onLifestyle: (change: Lifestyle) => void;
   saved: JapaneseStyleId[] | null;
   saving: boolean;
   onSave: () => void;
@@ -353,6 +385,13 @@ function ResultView({
           <p className="text-xs text-muted-foreground">{t("saveHint")}</p>
         </CardContent>
       </Card>
+
+      <LifestyleCard
+        lifestyle={lifestyle}
+        plan={result.plan}
+        busy={refining}
+        onChange={onLifestyle}
+      />
 
       {result.styles.map((style, index) => (
         <StyleSection
@@ -499,12 +538,108 @@ function StyleSection({ style, label }: { style: StyleDetail; label: string }) {
 
         <div className="space-y-1">
           <h3 className="text-sm font-semibold">{t("brands")}</h3>
-          <p className="text-sm text-muted-foreground">
-            {style.brands.join(" · ")}
-          </p>
+          <ul className="space-y-0.5 text-sm text-muted-foreground">
+            {brandGroups(style.brands).map((group) => (
+              <li key={group.tier}>
+                <span className="font-medium text-foreground">
+                  {t(`tiers.${group.tier}`)}
+                </span>{" "}
+                {group.names.join(" · ")}
+              </li>
+            ))}
+          </ul>
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function LifestyleCard({
+  lifestyle,
+  plan,
+  busy,
+  onChange,
+}: {
+  lifestyle: Lifestyle;
+  plan: StylePlan | null;
+  busy: boolean;
+  onChange: (change: Lifestyle) => void;
+}) {
+  const t = useTranslations("bodyStyling.styleExplore");
+  return (
+    <Card data-testid="style-lifestyle">
+      <CardHeader>
+        <CardTitle className="text-base">{t("lifestyle.title")}</CardTitle>
+        <CardDescription>{t("lifestyle.hint")}</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <Choice
+          label={t("lifestyle.dressCode")}
+          options={DRESS_CODES}
+          value={lifestyle.dress_code}
+          name={(v) => t(`lifestyle.dressCodes.${v}`)}
+          disabled={busy}
+          onPick={(dress_code) => onChange({ dress_code })}
+        />
+        <Choice
+          label={t("lifestyle.budget")}
+          options={BRAND_TIERS}
+          value={lifestyle.budget}
+          name={(v) => t(`tiers.${v}`)}
+          disabled={busy}
+          onPick={(budget) => onChange({ budget })}
+        />
+        {plan && (
+          <p
+            className="rounded-md bg-muted/60 p-3 text-sm leading-6"
+            data-testid="style-plan"
+          >
+            {plan.switches
+              ? t("lifestyle.planSwitch", {
+                  weekday: plan.weekday.name,
+                  weekend: plan.weekend.name,
+                })
+              : t("lifestyle.planSame", { style: plan.weekend.name })}
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function Choice<T extends string>({
+  label,
+  options,
+  value,
+  name,
+  disabled,
+  onPick,
+}: {
+  label: string;
+  options: T[];
+  value?: T;
+  name: (value: T) => string;
+  disabled: boolean;
+  onPick: (value: T) => void;
+}) {
+  return (
+    <div className="space-y-1.5" role="group" aria-label={label}>
+      <p className="text-sm font-medium">{label}</p>
+      <div className="flex flex-wrap gap-1.5">
+        {options.map((option) => (
+          <Button
+            key={option}
+            size="sm"
+            variant={value === option ? "default" : "outline"}
+            aria-pressed={value === option}
+            disabled={disabled}
+            onClick={() => onPick(option)}
+          >
+            {name(option)}
+          </Button>
+        ))}
+      </div>
+    </div>
   );
 }
 

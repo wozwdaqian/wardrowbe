@@ -362,7 +362,26 @@
     "copy": "Copy \"{term}\"",
     "brands": "Representative brands",
     "ranking": "Scores by style",
-    "error": "Something went wrong. Please try again."
+    "error": "Something went wrong. Please try again.",
+    "lifestyle": {
+      "title": "Your week",
+      "hint": "Tell us what work asks for and your budget; weekdays and weekends are planned separately and brands start from your price range.",
+      "dressCode": "Work dress code",
+      "budget": "Budget",
+      "dressCodes": {
+        "suit": "Suit and tie",
+        "business_casual": "Business casual",
+        "smart_casual": "Smart casual",
+        "casual": "No dress code"
+      },
+      "planSwitch": "Wear {weekday} on workdays and {weekend} at the weekend. Workday outfits and work reports follow {weekday}.",
+      "planSame": "{style} works for both the office and the weekend."
+    },
+    "tiers": {
+      "budget": "Affordable",
+      "mid": "Mid-range",
+      "premium": "Premium"
+    }
   },
   "silhouette": {
     "I": "I line · straight",
@@ -391,5 +410,25 @@
     "cool": "11–15°C: a jacket over one inner layer.",
     "cold": "6–10°C: a warm jacket or fleece over knitwear.",
     "freezing": "Below 5°C: a coat or down jacket; keep the neck warm."
+  },
+  "sizes": {
+    "label": "Suggested flat measurements (compare with the size chart)",
+    "row": "{name} {min}–{max} cm",
+    "keys": {
+      "chest_width": "chest width",
+      "length": "length",
+      "shoulder": "shoulder",
+      "waist_width": "waist width",
+      "hip_width": "hip width",
+      "thigh_width": "thigh width",
+      "inseam": "inseam",
+      "hem_width": "hem width"
+    },
+    "missing": "Add your {fields} to see more measurements.",
+    "fields": {
+      "inseam": "inseam",
+      "shoulder_width": "shoulder width"
+    },
+    "joiner": " and "
   }
 }

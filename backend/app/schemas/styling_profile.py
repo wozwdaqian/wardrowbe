@@ -15,6 +15,21 @@ STYLE_DATA = json.loads((Path(__file__).parents[1] / "data/japanese_styles.json"
     "styles"
 ]
 StyleId = Literal[*(style["id"] for style in STYLE_DATA)]
+LIFESTYLE = {
+    "dress_code": {
+        "suit": {"zh": "西装正装", "en": "Suit and tie"},
+        "business_casual": {"zh": "商务休闲", "en": "Business casual"},
+        "smart_casual": {"zh": "整洁休闲", "en": "Smart casual"},
+        "casual": {"zh": "没有要求", "en": "No dress code"},
+    },
+    "budget": {
+        "budget": {"zh": "平价为主", "en": "Mostly affordable"},
+        "mid": {"zh": "中等价位", "en": "Mid-range"},
+        "premium": {"zh": "愿意买贵一些", "en": "Happy to spend more"},
+    },
+}
+DressCode = Literal[*LIFESTYLE["dress_code"]]
+Budget = Literal[*LIFESTYLE["budget"]]
 PROFILE_CATALOGS = {
     "skin_depth": "skin_depth",
     "undertone": "undertone",
@@ -58,6 +73,9 @@ class StylingProfile(BaseModel):
     fit_issues: list[Literal[*CATALOG["fit_issues"]]] = Field(default_factory=list, max_length=8)
     # The main sub-style first; a second one when the quiz found two close favourites.
     preferred_styles: list[StyleId] = Field(default_factory=list, max_length=2)
+    # Lifestyle answers from the quiz: what work asks for, and where the budget sits.
+    dress_code: DressCode | None = None
+    budget: Budget | None = None
 
     @field_validator(
         "preferred_color_families",

@@ -19,7 +19,7 @@
         "en": ["Oversizing everything looks sloppy; anchor it somewhere, such as a cropped ankle or rolled cuffs", "Big logos and loud colours break the low-key feel"]
       },
       "search": {"zh": ["cityboy 穿搭", "日系宽松叠穿 男"], "ja": ["シティボーイ コーデ メンズ"]},
-      "brands": ["UNIQLO U", "BEAMS", "URBAN RESEARCH", "Graphpaper", "nanamica"],
+      "brands": [{"name": "UNIQLO U", "tier": "budget"}, {"name": "BEAMS", "tier": "mid"}, {"name": "URBAN RESEARCH", "tier": "mid"}, {"name": "Graphpaper", "tier": "premium"}, {"name": "nanamica", "tier": "premium"}, {"name": "GU", "tier": "budget"}],
       "starter": [
         {"slot": "top", "kind": "shirt", "color": "#b5ccd4", "fit": "relaxed"},
         {"slot": "top", "kind": "tshirt", "color": "#ffffff", "fit": "relaxed"},
@@ -86,7 +86,7 @@
         "en": ["Matching denim top and bottom looks heavy; vary the shade", "Too many patches and rips tip it into streetwear"]
       },
       "search": {"zh": ["阿美咔叽 穿搭", "美式复古 男 牛仔"], "ja": ["アメカジ コーデ メンズ"]},
-      "brands": ["Levi's", "Champion", "L.L.Bean", "orSlow", "Red Wing"],
+      "brands": [{"name": "Levi's", "tier": "mid"}, {"name": "Champion", "tier": "budget"}, {"name": "L.L.Bean", "tier": "mid"}, {"name": "orSlow", "tier": "premium"}, {"name": "Red Wing", "tier": "premium"}],
       "starter": [
         {"slot": "bottom", "kind": "jeans", "color": "#2b3a67", "fit": "regular"},
         {"slot": "top", "kind": "shirt", "color": "#803e47", "pattern": "check"},
@@ -148,7 +148,7 @@
         "en": ["All-over utility details read as a uniform; keep one clean basic", "Skinny workwear loses its practical feel"]
       },
       "search": {"zh": ["日系工装 穿搭 男", "军装风 男生"], "ja": ["ワークコーデ メンズ", "ミリタリー コーデ メンズ"]},
-      "brands": ["Dickies", "Carhartt WIP", "orSlow", "Buzz Rickson's", "Engineered Garments"],
+      "brands": [{"name": "Dickies", "tier": "budget"}, {"name": "Carhartt WIP", "tier": "mid"}, {"name": "orSlow", "tier": "premium"}, {"name": "Buzz Rickson's", "tier": "premium"}, {"name": "Engineered Garments", "tier": "premium"}],
       "starter": [
         {"slot": "bottom", "kind": "cargo_pants", "color": "#7a7442", "fit": "wide"},
         {"slot": "outerwear", "kind": "jacket", "color": "#b69b79"},
@@ -212,7 +212,7 @@
         "en": ["Head-to-toe technical gear looks like an actual hike; mix in one city piece", "Several bright colours at once look busy"]
       },
       "search": {"zh": ["山系穿搭 男", "gorpcore 男生"], "ja": ["山系 コーデ メンズ", "アウトドアコーデ メンズ"]},
-      "brands": ["and wander", "snow peak", "THE NORTH FACE", "Patagonia", "Goldwin"],
+      "brands": [{"name": "and wander", "tier": "premium"}, {"name": "snow peak", "tier": "premium"}, {"name": "THE NORTH FACE", "tier": "mid"}, {"name": "Patagonia", "tier": "mid"}, {"name": "Goldwin", "tier": "premium"}, {"name": "UNIQLO", "tier": "budget"}],
       "starter": [
         {"slot": "outerwear", "kind": "fleece", "color": "#d3be97", "fit": "relaxed"},
         {"slot": "outerwear", "kind": "jacket", "color": "#c7773a", "fit": "relaxed"},
@@ -276,7 +276,7 @@
         "en": ["Head-to-toe vintage looks like a costume", "Mind cleanliness and smell; skip pieces in poor condition"]
       },
       "search": {"zh": ["古着穿搭 男", "日系复古 男生"], "ja": ["古着 コーデ メンズ"]},
-      "brands": ["二手古着店 / thrift shops", "Levi's Vintage Clothing", "KAPITAL", "Needles"],
+      "brands": [{"name": "二手古着店 / thrift shops", "tier": "budget"}, {"name": "Levi's Vintage Clothing", "tier": "premium"}, {"name": "KAPITAL", "tier": "premium"}, {"name": "Needles", "tier": "premium"}],
       "starter": [
         {"slot": "top", "kind": "knit", "color": "#b89a3d"},
         {"slot": "top", "kind": "shirt", "color": "#e8d9a4", "pattern": "dot", "fit": "relaxed"},
@@ -337,7 +337,7 @@
         "en": ["All pale and all loose can look washed out; add one darker piece", "Too many creases read as untidy"]
       },
       "search": {"zh": ["日系文艺穿搭 男", "无印风穿搭 男", "森系男生"], "ja": ["ナチュラル系 コーデ メンズ"]},
-      "brands": ["MUJI 无印良品", "nest Robe", "YAECA", "MHL."],
+      "brands": [{"name": "MUJI 无印良品", "tier": "budget"}, {"name": "nest Robe", "tier": "mid"}, {"name": "YAECA", "tier": "premium"}, {"name": "MHL.", "tier": "mid"}],
       "starter": [
         {"slot": "top", "kind": "shirt", "color": "#efe8dd", "fit": "relaxed"},
         {"slot": "top", "kind": "cardigan", "color": "#718575", "fit": "relaxed"},
@@ -401,7 +401,7 @@
         "en": ["Fully formal looks like a job interview; swap in a knit or polo", "Too-tight slim fits look stiff"]
       },
       "search": {"zh": ["日系简约穿搭 男", "きれいめ 穿搭"], "ja": ["きれいめ コーデ メンズ"]},
-      "brands": ["UNIQLO", "nano・universe", "SHIPS", "UNITED ARROWS"],
+      "brands": [{"name": "UNIQLO", "tier": "budget"}, {"name": "nano・universe", "tier": "mid"}, {"name": "SHIPS", "tier": "mid"}, {"name": "UNITED ARROWS", "tier": "mid"}],
       "starter": [
         {"slot": "top", "kind": "shirt", "color": "#ffffff", "fit": "regular"},
         {"slot": "bottom", "kind": "trousers", "color": "#363c41", "fit": "tapered", "length": "short"},
@@ -462,7 +462,7 @@
         "en": ["Tie, blazer and dress shoes all at once is too formal for daily wear", "Trousers pooling on the shoe look sloppy"]
       },
       "search": {"zh": ["日系学院风 男", "常春藤穿搭 男"], "ja": ["アイビー コーデ メンズ", "トラッド コーデ メンズ"]},
-      "brands": ["BEAMS PLUS", "J.PRESS", "Brooks Brothers", "Kamakura Shirts"],
+      "brands": [{"name": "BEAMS PLUS", "tier": "mid"}, {"name": "J.PRESS", "tier": "premium"}, {"name": "Brooks Brothers", "tier": "mid"}, {"name": "Kamakura Shirts", "tier": "mid"}],
       "starter": [
         {"slot": "top", "kind": "shirt", "color": "#b5ccd4"},
         {"slot": "top", "kind": "vest", "color": "#803e47"},
@@ -524,7 +524,7 @@
         "en": ["Stretched collars and pilled tees ruin it", "One colour head to toe looks flat; vary light and dark"]
       },
       "search": {"zh": ["极简穿搭 男", "基础款穿搭 男生"], "ja": ["ノームコア コーデ メンズ"]},
-      "brands": ["UNIQLO", "GU", "MUJI 无印良品"],
+      "brands": [{"name": "UNIQLO", "tier": "budget"}, {"name": "GU", "tier": "budget"}, {"name": "MUJI 无印良品", "tier": "budget"}],
       "starter": [
         {"slot": "top", "kind": "tshirt", "color": "#ffffff"},
         {"slot": "top", "kind": "tshirt", "color": "#111827"},
@@ -582,7 +582,7 @@
         "en": ["Faded greyish black looks worn; wash carefully", "Shorter frames should limit length so the clothes do not swallow them"]
       },
       "search": {"zh": ["暗黑风穿搭 男", "山本耀司 风格 穿搭"], "ja": ["モード系 コーデ メンズ"]},
-      "brands": ["Yohji Yamamoto", "COMME des GARÇONS HOMME", "HOMME PLISSÉ ISSEY MIYAKE", "Y's"],
+      "brands": [{"name": "Yohji Yamamoto", "tier": "premium"}, {"name": "COMME des GARÇONS HOMME", "tier": "premium"}, {"name": "HOMME PLISSÉ ISSEY MIYAKE", "tier": "premium"}, {"name": "Y's", "tier": "premium"}],
       "starter": [
         {"slot": "top", "kind": "shirt", "color": "#111827", "fit": "relaxed"},
         {"slot": "bottom", "kind": "trousers", "color": "#111827", "fit": "wide"},
@@ -641,7 +641,7 @@
         "en": ["Big logos and several graphics together look chaotic", "Sizing up too far looks like wearing someone else's clothes"]
       },
       "search": {"zh": ["日系街头穿搭 男", "里原宿 风格"], "ja": ["ストリート系 コーデ メンズ"]},
-      "brands": ["NEIGHBORHOOD", "WTAPS", "A BATHING APE", "UNDERCOVER", "GU"],
+      "brands": [{"name": "NEIGHBORHOOD", "tier": "premium"}, {"name": "WTAPS", "tier": "premium"}, {"name": "A BATHING APE", "tier": "premium"}, {"name": "UNDERCOVER", "tier": "premium"}, {"name": "GU", "tier": "budget"}],
       "starter": [
         {"slot": "top", "kind": "hoodie", "color": "#111827", "fit": "relaxed"},
         {"slot": "bottom", "kind": "cargo_pants", "color": "#363c41", "fit": "wide"},

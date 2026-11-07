@@ -60,7 +60,10 @@ const detail = {
   tips: ["先从一件宽松衬衫开始"],
   pitfalls: ["整身都大一号会显得邋遢"],
   search: { zh: ["cityboy 穿搭"], ja: ["シティボーイ コーデ メンズ"] },
-  brands: ["BEAMS", "UNIQLO U"],
+  brands: [
+    { name: "UNIQLO U", tier: "budget" },
+    { name: "BEAMS", tier: "mid" },
+  ],
   starter: [
     {
       description: "浅蓝色宽松衬衫",
@@ -171,4 +174,73 @@ it("skips straight to the result when round two has nothing new", async () => {
   fireEvent.click(screen.getByRole("button", { name: "dislike" }));
   await screen.findByTestId("style-result");
   expect(screen.getByText("unsure")).toBeTruthy();
+});
+
+it("plans weekdays from the dress code and keeps it when saving", async () => {
+  mocks.profile = { styling_profile: { budget: "mid" } };
+  mocks.get.mockResolvedValue({ cards: [card("cityboy:0", "衬衫当外套")] });
+  const result = (plan: unknown) => ({
+    confident: true,
+    plan,
+    styles: [detail],
+    ranking: [
+      { id: "cityboy", name: "Cityboy 城市男孩", tagline: "x", score: 100 },
+    ],
+    liked_colors: [],
+    body_note: null,
+  });
+  mocks.post.mockImplementation(
+    async (path: string, body: { dress_code?: string }) =>
+      path.endsWith("round-two")
+        ? { cards: [] }
+        : result(
+            body.dress_code === "suit"
+              ? {
+                  weekday: { id: "kireime", name: "きれいめ 清爽干净" },
+                  weekend: { id: "cityboy", name: "Cityboy 城市男孩" },
+                  switches: true,
+                }
+              : null,
+          ),
+  );
+  mocks.patch.mockResolvedValue({ preferred_styles: ["cityboy"] });
+  mount();
+  fireEvent.click(screen.getByRole("button", { name: "start" }));
+  await screen.findByText("衬衫当外套");
+  fireEvent.click(screen.getByRole("button", { name: "like" }));
+  await screen.findByTestId("style-lifestyle");
+  // The saved budget is sent from the start; brands show their tiers.
+  expect(mocks.post).toHaveBeenLastCalledWith(
+    "/body-styling/style-explore/result",
+    {
+      answers: { "cityboy:0": "like" },
+      budget: "mid",
+    },
+  );
+  // One budget button plus the brand tier heading.
+  expect(screen.getAllByText("tiers.budget")).toHaveLength(2);
+  fireEvent.click(
+    screen.getByRole("button", { name: "lifestyle.dressCodes.suit" }),
+  );
+  expect((await screen.findByTestId("style-plan")).textContent).toContain(
+    "planSwitch",
+  );
+  expect(mocks.post).toHaveBeenLastCalledWith(
+    "/body-styling/style-explore/result",
+    {
+      answers: { "cityboy:0": "like" },
+      budget: "mid",
+      dress_code: "suit",
+    },
+  );
+  fireEvent.click(screen.getByRole("button", { name: "save" }));
+  await screen.findByText("saved");
+  expect(mocks.patch).toHaveBeenCalledWith(
+    "/body-styling/style-explore/styles",
+    {
+      styles: ["cityboy"],
+      budget: "mid",
+      dress_code: "suit",
+    },
+  );
 });

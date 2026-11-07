@@ -22,7 +22,7 @@ from app.schemas.body_styling import (
 )
 from app.schemas.styling_profile import CATALOG, StylingProfile
 from app.services.ai_service import AIService, TextGenerationResult
-from app.services.body_style_fallback import direction_for, rule_based_content
+from app.services.body_style_fallback import direction_for, rule_based_content, styles_for
 from app.services.body_style_rendering import missing_information, render_garment, resolve_text
 from app.services.body_style_rules import StyleRules, build_rules, default_rules, enforce_rules
 from app.services.notification_providers import NotificationMessage
@@ -67,8 +67,8 @@ def body_facts(
         facts.extend(
             BodyFact(id=key, value=value, unit="self_report")
             for key, value in profile.model_dump(exclude_none=True).items()
-            # The style direction steers the looks; it is not a fact about the body.
-            if value and key != "preferred_styles"
+            # Style direction and lifestyle answers steer the looks; they are not body facts.
+            if value and key not in {"preferred_styles", "dress_code", "budget"}
         )
     return facts
 
@@ -269,8 +269,9 @@ def prepare_style(
         "contract_version": 3,
         "mode": mode,
     }
-    if profile.preferred_styles:
-        snapshot["style_direction"] = style_direction(profile.preferred_styles)
+    styles = styles_for(profile, request.occasion)
+    if styles:
+        snapshot["style_direction"] = style_direction(styles)
     return profile, facts, rules, snapshot
 
 
@@ -317,7 +318,7 @@ async def generate_rule_based_style(
     profile, facts, rules, snapshot = prepare_style(
         user, measurements, request, recent_feedback, "rules"
     )
-    direction = direction_for(profile, request.style)
+    direction = direction_for(profile, request.style, request.occasion)
     result = rule_based_content(facts, profile, rules, request.style, user.locale, seed, direction)
     return await save_style(db, user, snapshot, facts, result, "rules")
 

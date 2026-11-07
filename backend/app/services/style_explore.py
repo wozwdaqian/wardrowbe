@@ -21,7 +21,7 @@ from app.schemas.body_styling import (
     outfit_silhouette,
 )
 from app.schemas.styling_profile import CATALOG, STYLE_DATA, StylingProfile
-from app.services.body_style_fallback import _garment
+from app.services.body_style_fallback import _garment, weekday_style
 from app.services.body_style_rendering import render_garment
 from app.services.body_style_rules import StyleRules, build_rules
 from app.services.wardrobe_matching import (
@@ -201,6 +201,31 @@ def starter_pieces(style_id: str, items: list, profile: StylingProfile, zh: bool
     return pieces
 
 
+TIER_ORDER = ("budget", "mid", "premium")
+
+
+def ranked_brands(style_id: str, budget: str | None) -> list[dict]:
+    """The style's brands, the user's budget tier first and then the nearest tiers."""
+    brands = STYLES[style_id]["brands"]
+    if budget is None:
+        return brands
+    home = TIER_ORDER.index(budget)
+    return sorted(brands, key=lambda b: abs(TIER_ORDER.index(b["tier"]) - home))
+
+
+def style_plan(main: str, dress_code: str | None, zh: bool) -> dict | None:
+    """Weekday and weekend styles once work's dress code is known."""
+    if dress_code is None:
+        return None
+    weekday = weekday_style(main, dress_code)
+    lang = _lang(zh)
+    return {
+        "weekday": {"id": weekday, "name": STYLES[weekday]["name"][lang]},
+        "weekend": {"id": main, "name": STYLES[main]["name"][lang]},
+        "switches": weekday != main,
+    }
+
+
 def style_detail(style_id: str, items: list, profile: StylingProfile, zh: bool) -> dict:
     style = STYLES[style_id]
     lang = _lang(zh)
@@ -217,7 +242,7 @@ def style_detail(style_id: str, items: list, profile: StylingProfile, zh: bool) 
         "tips": style["tips"][lang],
         "pitfalls": style["pitfalls"][lang],
         "search": style["search"],
-        "brands": style["brands"],
+        "brands": ranked_brands(style_id, profile.budget),
         "starter": starter_pieces(style_id, items, profile, zh),
         "sample": sample,
     }
@@ -252,6 +277,7 @@ def explore_result(
         chosen = list(BEGINNER_STYLES)
     return {
         "confident": bool(best),
+        "plan": style_plan(chosen[0], profile.dress_code, zh),
         "styles": [style_detail(style_id, items, profile, zh) for style_id in chosen],
         "ranking": ranking,
         "liked_colors": liked_colors(answers, zh),

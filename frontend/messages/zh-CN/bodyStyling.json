@@ -362,7 +362,26 @@
     "copy": "复制「{term}」",
     "brands": "代表品牌",
     "ranking": "各风格得分",
-    "error": "出了点问题，请重试。"
+    "error": "出了点问题，请重试。",
+    "lifestyle": {
+      "title": "生活场景",
+      "hint": "告诉我们上班的着装要求和预算，工作日和周末分开安排，品牌按你的价位排序。",
+      "dressCode": "上班着装要求",
+      "budget": "预算",
+      "dressCodes": {
+        "suit": "西装正装",
+        "business_casual": "商务休闲",
+        "smart_casual": "整洁休闲",
+        "casual": "没有要求"
+      },
+      "planSwitch": "工作日穿 {weekday}，周末再穿 {weekend}。上班日的今日穿搭和工作场合报告会按 {weekday} 生成。",
+      "planSame": "{style} 上班和周末都能穿，不需要分开安排。"
+    },
+    "tiers": {
+      "budget": "平价",
+      "mid": "中价",
+      "premium": "高价"
+    }
   },
   "silhouette": {
     "I": "I 型 · 直筒",
@@ -391,5 +410,25 @@
     "cool": "11–15°C：外套加一层内搭。",
     "cold": "6–10°C：厚外套或抓绒，内搭针织。",
     "freezing": "5°C 以下：大衣或羽绒服，注意脖子保暖。"
+  },
+  "sizes": {
+    "label": "建议平铺尺寸（对照商品尺码表）",
+    "row": "{name} {min}–{max} cm",
+    "keys": {
+      "chest_width": "身宽",
+      "length": "衣长",
+      "shoulder": "肩宽",
+      "waist_width": "腰宽",
+      "hip_width": "臀宽",
+      "thigh_width": "腿宽",
+      "inseam": "内长",
+      "hem_width": "裤口"
+    },
+    "missing": "填写{fields}后可算出更多尺寸。",
+    "fields": {
+      "inseam": "内腿长",
+      "shoulder_width": "肩宽"
+    },
+    "joiner": "、"
   }
 }

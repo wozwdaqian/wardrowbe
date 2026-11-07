@@ -70,6 +70,9 @@ through the write tools. Rules:
 - styling_profile.preferred_styles holds the user's Japanese sub-styles from the style quiz (main
   one first); follow that direction. When the user has none and is unsure of their style, suggest the
   style explorer at /dashboard/body-styling/style.
+- styling_profile.dress_code (suit/business_casual/smart_casual/casual) is what work asks for, and
+  budget (budget/mid/premium) is where the user's spending sits; work-day looks may switch to a
+  kireime weekday style, and brand suggestions should start from the user's budget.
 - Answer in {language}, briefly and concretely."""
 
 JSON_PROTOCOL = """Tools are not available natively here. To use one, reply with ONLY a JSON object

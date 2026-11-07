@@ -20,7 +20,13 @@ from app.schemas.body_styling import (
     OutfitFeedback,
     ReportFeedback,
 )
-from app.schemas.styling_profile import StyleId, StylingProfile, styling_revision
+from app.schemas.styling_profile import (
+    Budget,
+    DressCode,
+    StyleId,
+    StylingProfile,
+    styling_revision,
+)
 from app.services.body_style_packing import MAX_DAYS, build_packing
 from app.services.body_style_today import build_today, explain_today
 from app.services.body_styling_service import (
@@ -347,11 +353,16 @@ AnswerValue = Literal["like", "neutral", "dislike"]
 class StyleAnswers(BaseModel):
     model_config = ConfigDict(extra="forbid")
     answers: dict[str, AnswerValue] = Field(max_length=40)
+    # Lifestyle answers shown on the result page; when left out, the saved ones are used.
+    dress_code: DressCode | None = None
+    budget: Budget | None = None
 
 
 class StyleChoice(BaseModel):
     model_config = ConfigDict(extra="forbid")
     styles: list[StyleId] = Field(min_length=1, max_length=2)
+    dress_code: DressCode | None = None
+    budget: Budget | None = None
 
 
 def current_profile(user: User) -> StylingProfile:
@@ -387,9 +398,12 @@ async def style_result(data: StyleAnswers, db: DbSession, current_user: CurrentU
             )
         )
     ).all()
+    profile = current_profile(current_user)
+    profile.dress_code = data.dress_code or profile.dress_code
+    profile.budget = data.budget or profile.budget
     return explore_result(
         data.answers,
-        current_profile(current_user),
+        profile,
         measurements,
         list(items),
         zh_locale(current_user),
@@ -404,10 +418,14 @@ async def save_preferred_styles(
     await db.refresh(current_user, with_for_update=True)
     profile = current_profile(current_user)
     profile.preferred_styles = list(dict.fromkeys(data.styles))
+    profile.dress_code = data.dress_code or profile.dress_code
+    profile.budget = data.budget or profile.budget
     current_user.styling_profile = profile.model_dump(exclude_none=True)
     await db.flush()
     return {
         "preferred_styles": profile.preferred_styles,
+        "dress_code": profile.dress_code,
+        "budget": profile.budget,
         "styling_profile_revision": styling_revision(
             current_user.body_measurements, current_user.styling_profile
         ),

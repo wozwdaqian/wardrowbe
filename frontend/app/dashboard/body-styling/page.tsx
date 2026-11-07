@@ -35,6 +35,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { GarmentSizes } from "@/components/body-styling/garment-sizes";
 import { OutfitShape } from "@/components/body-styling/outfit-shape";
 import { OutfitIllustration } from "@/components/body-styling/outfit-illustration";
 import { StylingProfileEditor } from "@/components/body-styling/styling-profile-editor";
@@ -1078,6 +1079,12 @@ export default function BodyStylingPage() {
                                     {garment.fabric_reason}
                                   </p>
                                 )}
+                                <GarmentSizes
+                                  garment={garment}
+                                  measurements={
+                                    report.input_snapshot.measurements || {}
+                                  }
+                                />
                                 <GarmentWardrobeStatus
                                   match={
                                     wardrobe.data?.outfits[index]?.garments[
