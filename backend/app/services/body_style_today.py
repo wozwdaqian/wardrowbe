@@ -18,7 +18,7 @@ from app.schemas.styling_profile import StylingProfile
 from app.services.ai_service import AIService
 from app.services.body_style_fallback import direction_for, today_outfit
 from app.services.body_style_rendering import resolve_text
-from app.services.body_style_rules import build_rules
+from app.services.body_style_rules import build_rules, temperature_band
 from app.services.body_styling_service import body_facts
 from app.services.style_explore import STYLES
 from app.services.weather_service import WeatherService
@@ -91,7 +91,8 @@ async def build_today(
         style = (latest or {}).get("context", {}).get("style", "minimal")
     weather = await current_weather(user)
     season = season_for(today, weather.temperature if weather else None)
-    request = BodyStyleRequest(occasion=occasion, style=style, season=season)
+    band = temperature_band(weather.temperature) if weather else None
+    request = BodyStyleRequest(occasion=occasion, style=style, season=season, temperature_band=band)
     try:
         measurements = BodyMeasurements.model_validate(user.body_measurements or {})
     except ValidationError:
@@ -113,6 +114,7 @@ async def build_today(
         "style": style,
         "style_direction": direction,
         "season": season,
+        "temperature_band": band,
         "reroll": reroll,
         "weather": {
             "temperature": weather.temperature,

@@ -24,7 +24,12 @@ from app.schemas.styling_profile import CATALOG, StylingProfile
 from app.services.ai_service import AIService
 from app.services.body_style_fallback import LOOKS, Palette, _outfit
 from app.services.body_style_rendering import render_garment
-from app.services.body_style_rules import StyleRules, build_rules, outfit_violations
+from app.services.body_style_rules import (
+    StyleRules,
+    apply_remedies,
+    build_rules,
+    outfit_violations,
+)
 from app.services.body_styling_service import SYSTEM_PROMPT, render_outfit
 
 EDITABLE = {"kind", "color", "material", "fit", "length", "rise", "pattern"}
@@ -66,11 +71,13 @@ def stored_draft_outfit(outfit: dict) -> dict:
     }
     for key in ("color_reason", "fabric_reason"):
         draft[key] = outfit.get(key) or {"text": "-", "evidence": []}
+    draft["techniques"] = outfit.get("techniques") or []
     return draft
 
 
 def _check(draft: DraftOutfit, rules: StyleRules, facts: list[BodyFact]) -> None:
-    errors = outfit_violations(draft.garments, rules)
+    draft.techniques = apply_remedies(draft.garments, draft.techniques, rules)
+    errors = outfit_violations(draft.garments, rules, draft.techniques)
     available = {f.id for f in facts} | rules.evidence_ids()
     if not set(draft.evidence) <= available:
         errors.append("outfit cites facts the user did not provide")
@@ -139,6 +146,9 @@ async def replace_garment(
     caption = render_garment(validated.garments[garment_index], user.locale.startswith("zh"))
     caption["fabric_reason"] = source["garments"][garment_index].get("fabric_reason")
     rendered["garments"][garment_index] = caption
+    # A changed cut can change the silhouette and which techniques still work.
+    rendered["techniques"] = validated.techniques
+    rendered["silhouette"] = validated.silhouette
     return await _derive(
         db,
         user,

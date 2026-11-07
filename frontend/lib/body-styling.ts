@@ -176,6 +176,14 @@ export type Garment = {
   fabric_summary?: string | null;
   fabric_reason?: string | null;
 };
+export type Silhouette = "I" | "A" | "Y" | "H";
+export type Technique =
+  | "front_tuck"
+  | "roll_cuffs"
+  | "roll_hem"
+  | "show_socks"
+  | "layered_hem"
+  | "tonal_leg";
 export type BodyOutfit = {
   title: string;
   garments: Garment[];
@@ -185,6 +193,9 @@ export type BodyOutfit = {
   color_plan?: ColorPlan | null;
   color_reason?: StyleExplanation | null;
   fabric_reason?: StyleExplanation | null;
+  // Absent on reports made before silhouettes and techniques existed.
+  techniques?: Technique[];
+  silhouette?: Silhouette | null;
 };
 export type Observation = { text: string; evidence: FactId[] };
 export type FitAdvice = Observation & {

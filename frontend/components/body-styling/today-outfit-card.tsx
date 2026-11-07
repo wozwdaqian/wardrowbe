@@ -21,6 +21,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { OutfitShape } from "@/components/body-styling/outfit-shape";
 import { OutfitIllustration } from "@/components/body-styling/outfit-illustration";
 import { openAssistant } from "@/components/assistant/assistant-panel";
 import { useExplainToday, useTodayOutfit } from "@/lib/hooks/use-body-styling";
@@ -81,6 +82,11 @@ export function TodayOutfitCard() {
                   {
                     season: t("seasons." + data.season),
                   },
+                )}
+                {data.temperature_band && (
+                  <span className="mt-1 block" data-testid="today-band">
+                    {t("band." + data.temperature_band)}
+                  </span>
                 )}
               </CardDescription>
             )}
@@ -151,6 +157,10 @@ export function TodayOutfitCard() {
               <p className="text-sm leading-6 text-muted-foreground">
                 {data.outfit.body_reason}
               </p>
+              <OutfitShape
+                silhouette={data.outfit.silhouette}
+                techniques={data.outfit.techniques}
+              />
               <p className="text-sm leading-6">{data.outfit.styling_tip}</p>
               {explain.data && (
                 <p

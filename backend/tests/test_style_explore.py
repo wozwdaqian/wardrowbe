@@ -35,7 +35,7 @@ def test_every_look_and_starter_piece_renders_and_follows_the_rules():
                 )
                 for g in card["garments"]
             ]
-            assert outfit_violations(garments, rules) == [], card["id"]
+            assert outfit_violations(garments, rules, card["techniques"]) == [], card["id"]
         assert len(style["starter"]) >= 5
         for lang in ("zh", "en"):
             assert style["name"][lang] and style["description"][lang] and style["tips"][lang]

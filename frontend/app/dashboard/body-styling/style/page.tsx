@@ -29,6 +29,7 @@ import {
 } from "@/lib/style-explore";
 import type { JapaneseStyleId } from "@/lib/generated/japanese-styles";
 import { OutfitIllustration } from "@/components/body-styling/outfit-illustration";
+import { OutfitShape } from "@/components/body-styling/outfit-shape";
 import { openAssistant } from "@/components/assistant/assistant-panel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -59,8 +60,7 @@ export default function StyleExplorePage() {
   const [saved, setSaved] = useState<JapaneseStyleId[] | null>(null);
 
   const start = useMutation({
-    mutationFn: () =>
-      api.get<{ cards: StyleCard[] }>(`${BASE}/round-one`),
+    mutationFn: () => api.get<{ cards: StyleCard[] }>(`${BASE}/round-one`),
     onSuccess: (data) => {
       setAnswers({});
       setResult(null);
@@ -152,7 +152,9 @@ export default function StyleExplorePage() {
             {!!current.length && (
               <p className="text-sm" data-testid="current-styles">
                 {t("current", {
-                  styles: current.map((id) => styleName(id, locale)).join(" · "),
+                  styles: current
+                    .map((id) => styleName(id, locale))
+                    .join(" · "),
                 })}
               </p>
             )}
@@ -235,6 +237,10 @@ function QuizCard({
             </Badge>
           ))}
         </div>
+        <OutfitShape
+          silhouette={card.silhouette}
+          techniques={card.techniques}
+        />
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="mx-auto max-w-xs">
@@ -334,9 +340,7 @@ function ResultView({
             </Button>
             <Button
               variant="outline"
-              onClick={() =>
-                openAssistant(t("askPrompt", { style: names }))
-              }
+              onClick={() => openAssistant(t("askPrompt", { style: names }))}
             >
               <Bot className="mr-1.5 h-4 w-4" />
               {t("ask")}

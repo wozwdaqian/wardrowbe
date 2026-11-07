@@ -8,11 +8,18 @@ is replaced by another look of the same sub-style when one exists.
 """
 
 import random
+from types import SimpleNamespace
 from uuid import UUID
 
 from pydantic import ValidationError
 
-from app.schemas.body_styling import BodyMeasurements, BodyStyleRequest, DraftGarment
+from app.schemas.body_styling import (
+    BodyMeasurements,
+    BodyStyleRequest,
+    DraftGarment,
+    normalize_techniques,
+    outfit_silhouette,
+)
 from app.schemas.styling_profile import CATALOG, STYLE_DATA, StylingProfile
 from app.services.body_style_fallback import _garment
 from app.services.body_style_rendering import render_garment
@@ -73,11 +80,14 @@ def look_card(
     if any(g is None for g in garments):
         return None
     lang = _lang(zh)
+    shape = [SimpleNamespace(**g) for g in garments]
     return {
         "id": f"{style_id}:{index}",
         "title": look["title"][lang],
         "tags": look["tags"][lang],
         "garments": garments,
+        "techniques": normalize_techniques(shape, look.get("techniques", [])),
+        "silhouette": outfit_silhouette(shape),
     }
 
 

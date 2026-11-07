@@ -8,7 +8,13 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from app.schemas.body_styling import SLOT_KINDS, BodyMeasurements, BodyStyleRequest
+from app.schemas.body_styling import (
+    SLOT_KINDS,
+    BodyMeasurements,
+    BodyStyleRequest,
+    needs_anchor,
+    technique_possible,
+)
 from app.schemas.styling_profile import CATALOG, StylingProfile
 
 Area = Literal["top_length", "trouser_rise", "trouser_leg", "outerwear"]
@@ -33,6 +39,12 @@ class AreaRule(BaseModel):
     prefer: dict[str, list[str]] = Field(default_factory=dict)
     avoid: dict[str, list[str]] = Field(default_factory=dict)
     reasons: list[str] = Field(default_factory=list)
+    # "attribute=value" -> techniques that make an avoided value work after all, e.g. a long
+    # top with the front tucked still shows the waistline.
+    remedies: dict[str, list[str]] = Field(default_factory=dict)
+
+    def remedy_for(self, attribute: str, value: str) -> list[str]:
+        return self.remedies.get(f"{attribute}={value}", [])
 
 
 class SeasonRule(BaseModel):
@@ -41,6 +53,26 @@ class SeasonRule(BaseModel):
     banned_constructions: list[str] = Field(default_factory=list)
     banned_materials: list[str] = Field(default_factory=list)
     requires_outerwear: bool = False
+    # Empty means any outerwear; otherwise only these are warm enough.
+    outerwear_kinds: list[str] = Field(default_factory=list)
+
+    def merged(self, other: "SeasonRule") -> "SeasonRule":
+        def union(a, b):
+            return sorted(set(a) | set(b))
+
+        outer = (
+            sorted(set(self.outerwear_kinds) & set(other.outerwear_kinds))
+            if self.outerwear_kinds and other.outerwear_kinds
+            else self.outerwear_kinds or other.outerwear_kinds
+        )
+        return SeasonRule(
+            banned_kinds=union(self.banned_kinds, other.banned_kinds),
+            banned_weights=union(self.banned_weights, other.banned_weights),
+            banned_constructions=union(self.banned_constructions, other.banned_constructions),
+            banned_materials=union(self.banned_materials, other.banned_materials),
+            requires_outerwear=self.requires_outerwear or other.requires_outerwear,
+            outerwear_kinds=outer,
+        )
 
 
 class OccasionRule(BaseModel):
@@ -51,6 +83,7 @@ class OccasionRule(BaseModel):
 class StyleRules(BaseModel):
     season: str
     occasion: str
+    temperature_band: str | None = None
     proportion: dict[Area, AreaRule]
     season_rule: SeasonRule
     occasion_rule: OccasionRule
@@ -59,7 +92,7 @@ class StyleRules(BaseModel):
 
     def evidence_ids(self) -> set[str]:
         ids = {RULE_EVIDENCE[area] for area, rule in self.proportion.items() if rule.reasons}
-        if self.season != "all":
+        if self.season != "all" or self.temperature_band:
             ids.add("rule_season")
         ids.add("rule_occasion")
         return ids
@@ -70,6 +103,7 @@ class StyleRules(BaseModel):
                 area: rule.model_dump() for area, rule in self.proportion.items() if rule.reasons
             },
             "season": self.season_rule.model_dump(),
+            "temperature_band": self.temperature_band,
             "occasion": self.occasion_rule.model_dump(),
             "avoided_materials_including_blends": self.avoided_materials,
             "avoided_color_families": self.avoided_color_families,
@@ -106,6 +140,9 @@ def proportion_rules(
         _add(rules["top_length"], "prefer", "length", ["short", "regular"], reason)
         _add(rules["top_length"], "avoid", "length", ["long"], reason)
         _add(rules["outerwear"], "prefer", "length", ["short", "regular"], reason)
+        # A long top still shows the waistline when its front is tucked, and trousers and
+        # shoes in one tone carry the leg line on under it.
+        rules["top_length"].remedies["length=long"] = ["front_tuck", "tonal_leg"]
     if "midsection" in goals or waist_chest >= 0.92 or "belly_cling" in issues:
         reason = (
             "midsection_goal"
@@ -128,6 +165,7 @@ def proportion_rules(
     if "hem_bunches" in issues:
         _add(rules["trouser_leg"], "prefer", "length", ["short", "regular"], "hem_bunches")
         _add(rules["trouser_leg"], "avoid", "length", ["long"], "hem_bunches")
+        rules["trouser_leg"].remedies["length=long"] = ["roll_hem"]
     if "shoulders_tight" in issues:
         _add(rules["top_length"], "avoid", "fit", ["slim"], "shoulders_tight")
         _add(rules["outerwear"], "avoid", "fit", ["slim"], "shoulders_tight")
@@ -166,6 +204,53 @@ SEASONS = {
         requires_outerwear=True,
     ),
 }
+# Japanese guides dress by temperature in roughly 5 °C steps; today's outfit uses the current
+# temperature's band on top of the calendar season.
+TEMPERATURE_BANDS = (
+    ("hot", 26),
+    ("warm", 21),
+    ("mild", 16),
+    ("cool", 11),
+    ("cold", 6),
+    ("freezing", None),
+)
+WARM_OUTER = ["coat", "trench", "down_jacket", "fleece", "jacket"]
+BANDS = {
+    "hot": SEASONS["summer"].merged(SeasonRule(banned_kinds=["jacket", "cardigan", "knit"])),
+    "warm": SeasonRule(
+        banned_kinds=["coat", "trench", "down_jacket", "fleece", "turtleneck"],
+        banned_weights=["heavy"],
+        banned_constructions=["flannel", "fleece", "corduroy"],
+    ),
+    "mild": SeasonRule(banned_kinds=["coat", "down_jacket"]),
+    "cool": SeasonRule(
+        banned_kinds=["down_jacket", "shorts", "sandals"],
+        banned_constructions=["mesh"],
+        requires_outerwear=True,
+    ),
+    "cold": SeasonRule(
+        banned_kinds=["shorts", "sandals"],
+        banned_constructions=["mesh", "linen_weave"],
+        requires_outerwear=True,
+        outerwear_kinds=WARM_OUTER,
+    ),
+    "freezing": SeasonRule(
+        banned_kinds=["shorts", "sandals"],
+        banned_constructions=["mesh", "linen_weave"],
+        banned_materials=["linen", "linen_blend"],
+        requires_outerwear=True,
+        outerwear_kinds=["coat", "down_jacket"],
+    ),
+}
+
+
+def temperature_band(temperature: float) -> str:
+    for band, lowest in TEMPERATURE_BANDS:
+        if lowest is None or temperature >= lowest:
+            return band
+    return "freezing"
+
+
 EVERYTHING = {slot: sorted(kinds) for slot, kinds in SLOT_KINDS.items()}
 
 
@@ -215,13 +300,17 @@ def blocked_materials(profile: StylingProfile) -> list[str]:
 def build_rules(
     measurements: BodyMeasurements | None, profile: StylingProfile, request: BodyStyleRequest
 ) -> StyleRules:
+    season_rule = SEASONS[request.season]
+    if request.temperature_band:
+        season_rule = season_rule.merged(BANDS[request.temperature_band])
     return StyleRules(
         season=request.season,
         occasion=request.occasion,
+        temperature_band=request.temperature_band,
         proportion=proportion_rules(measurements, profile, list(request.goals))
         if measurements
         else {},
-        season_rule=SEASONS[request.season],
+        season_rule=season_rule,
         occasion_rule=OCCASIONS[request.occasion],
         avoided_materials=blocked_materials(profile),
         avoided_color_families=sorted(profile.avoided_color_families),
@@ -233,8 +322,34 @@ def default_rules(profile: StylingProfile) -> StyleRules:
     return build_rules(None, profile, BodyStyleRequest())
 
 
-def outfit_violations(garments: list, rules: StyleRules) -> list[str]:
-    """Return readable rule violations for one outfit's draft garments."""
+# A whole outfit should agree on warmth: no down jacket over shorts and sandals.
+WARM_KINDS = {"down_jacket", "coat", "fleece"}
+BARE_KINDS = {"shorts", "sandals"}
+
+
+def apply_remedies(garments: list, techniques: list[str], rules: StyleRules) -> list[str]:
+    """Add the first possible remedy technique for each avoided cut that has one."""
+    techniques = list(techniques)
+    for g in garments:
+        for rule in rules.proportion.values():
+            if rule.slot != g.slot:
+                continue
+            for attribute, values in rule.avoid.items():
+                value = getattr(g, attribute, None)
+                remedies = rule.remedy_for(attribute, value) if value in values else []
+                if remedies and not set(remedies) & set(techniques):
+                    usable = [t for t in remedies if technique_possible(t, garments, techniques)]
+                    if usable and len(techniques) < 3:
+                        techniques.append(usable[0])
+    return techniques
+
+
+def outfit_violations(garments: list, rules: StyleRules, techniques=()) -> list[str]:
+    """Return readable rule violations for one outfit's draft garments.
+
+    `techniques` are the outfit's wearing techniques; a remedy among them excuses an avoided
+    proportion (a tucked long top, rolled hems for trousers that bunch).
+    """
     errors = []
     season, occasion = rules.season_rule, rules.occasion_rule
     for g in garments:
@@ -265,14 +380,35 @@ def outfit_violations(garments: list, rules: StyleRules) -> list[str]:
             if rule.slot != g.slot:
                 continue
             for attribute, values in rule.avoid.items():
-                if getattr(g, attribute, None) in values:
+                value = getattr(g, attribute, None)
+                if value in values and not set(rule.remedy_for(attribute, value)) & set(techniques):
                     errors.append(
                         f"{area} rule ({', '.join(rule.reasons)}) avoids "
                         f"{attribute}={getattr(g, attribute)} for {label}"
                     )
+        if (
+            g.slot == "outerwear"
+            and season.outerwear_kinds
+            and g.kind not in season.outerwear_kinds
+        ):
+            errors.append(
+                f"{rules.temperature_band or rules.season} weather needs warmer outerwear than {g.kind}"
+            )
     slots = {g.slot for g in garments}
     if season.requires_outerwear and "outerwear" not in slots:
         errors.append(f"season {rules.season} requires outerwear")
+    if needs_anchor(garments, techniques):
+        errors.append(
+            "an H silhouette (loose top over wide trousers) needs one anchored point: "
+            "ankle-length trousers or front_tuck, roll_cuffs, roll_hem or show_socks"
+        )
+    kinds = {g.kind for g in garments}
+    heavy = any(g.fabric and g.fabric.weight == "heavy" for g in garments)
+    if (kinds & WARM_KINDS or heavy) and kinds & BARE_KINDS:
+        errors.append(
+            "warmth must agree across the outfit: no coats, down, fleece or heavy fabric "
+            "with shorts or sandals"
+        )
     if "all_white" in occasion.taboos and all(
         CATALOG["colors"][g.color]["family"] == "white" for g in garments
     ):
@@ -283,11 +419,13 @@ def outfit_violations(garments: list, rules: StyleRules) -> list[str]:
 
 
 def enforce_rules(draft, rules: StyleRules) -> None:
-    """Raise a ValueError that names every violated rule, for the repair prompt."""
+    """Add possible remedies, then raise a ValueError naming every violated rule."""
+    for outfit in draft.outfits:
+        outfit.techniques = apply_remedies(outfit.garments, outfit.techniques, rules)
     errors = [
         f"outfit {index + 1}: {error}"
         for index, outfit in enumerate(draft.outfits)
-        for error in outfit_violations(outfit.garments, rules)
+        for error in outfit_violations(outfit.garments, rules, outfit.techniques)
     ]
     if errors:
         raise ValueError("style rules violated: " + "; ".join(errors))

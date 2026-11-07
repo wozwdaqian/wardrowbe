@@ -91,6 +91,22 @@ async def test_hot_weather_never_gets_a_coat(client, auth_headers, weather):
         assert data["season"] == "summer" and data["weather"]["temperature"] == 31
         kinds = {g["kind"] for g in data["outfit"]["garments"]}
         assert not kinds & {"coat", "down_jacket", "trench", "turtleneck", "boots"}
+        assert data["temperature_band"] == "hot"
+        assert data["outfit"]["silhouette"] in {"I", "A", "Y", "H"}
+
+
+@pytest.mark.asyncio
+async def test_freezing_weather_gets_a_coat_or_down(client, auth_headers, weather):
+    weather["value"] = SimpleNamespace(temperature=-2, condition="snowy")
+    for reroll in range(4):
+        data = (
+            await client.get(
+                BASE, headers=auth_headers, params={"occasion": "daily", "reroll": reroll}
+            )
+        ).json()
+        assert data["temperature_band"] == "freezing"
+        outer = [g["kind"] for g in data["outfit"]["garments"] if g["slot"] == "outerwear"]
+        assert outer and outer[0] in {"coat", "down_jacket"}
 
 
 @pytest.mark.asyncio

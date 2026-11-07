@@ -1,4 +1,4 @@
-import type { Garment } from "@/lib/body-styling";
+import type { Garment, Silhouette, Technique } from "@/lib/body-styling";
 import {
   JAPANESE_STYLE_NAMES,
   type JapaneseStyleId,
@@ -10,6 +10,8 @@ export type StyleCard = {
   title: string;
   tags: string[];
   garments: Garment[];
+  techniques?: Technique[];
+  silhouette?: Silhouette | null;
 };
 export type StarterPiece = {
   description: string;
@@ -36,7 +38,12 @@ export type StyleDetail = {
 export type StyleResult = {
   confident: boolean;
   styles: StyleDetail[];
-  ranking: { id: JapaneseStyleId; name: string; tagline: string; score: number }[];
+  ranking: {
+    id: JapaneseStyleId;
+    name: string;
+    tagline: string;
+    score: number;
+  }[];
   liked_colors: string[];
   body_note: { kind: "solid" | "tall_slim"; styles: JapaneseStyleId[] } | null;
 };
@@ -51,6 +58,8 @@ export function asOutfit(card: StyleCard) {
   return {
     title: card.title,
     garments: card.garments,
+    techniques: card.techniques,
+    silhouette: card.silhouette,
     body_reason: "",
     evidence: [],
     styling_tip: "",

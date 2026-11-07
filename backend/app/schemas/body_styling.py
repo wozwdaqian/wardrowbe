@@ -74,6 +74,8 @@ class BodyStyleRequest(BaseModel):
         default_factory=lambda: ["balance", "comfort"], min_length=1, max_length=5
     )
     season: Literal["all", "spring", "summer", "autumn", "winter"] = "all"
+    # Set from the current temperature for today's outfit; adds that band's limits.
+    temperature_band: Literal["hot", "warm", "mild", "cool", "cold", "freezing"] | None = None
     # auto uses AI when it is available and the deterministic rules otherwise.
     mode: Literal["auto", "ai", "rules"] = "auto"
     body_measurements_revision: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
@@ -240,6 +242,91 @@ class ColorPlan(StrictModel):
     )
 
 
+# Wearing techniques Japanese styling guides lean on; each needs the garments that make it possible.
+Technique = Literal[
+    "front_tuck", "roll_cuffs", "roll_hem", "show_socks", "layered_hem", "tonal_leg"
+]
+TECHNIQUES: tuple[str, ...] = Technique.__args__
+# Silhouette letters used by Japanese guides: I straight, A narrow over wide, Y loose over
+# narrow; H is loose over wide, which needs one anchored point to avoid looking sloppy.
+Silhouette = Literal["I", "A", "Y", "H"]
+TUCKABLE = {"tshirt", "polo", "shirt", "knit", "sweatshirt", "turtleneck"}
+SHORT_SLEEVES = {"tshirt", "polo", "vest"}
+STIFF_SLEEVES = {"blazer", "suit_jacket", "coat", "trench", "down_jacket"}
+ROLLABLE_HEMS = {"jeans", "chinos", "cargo_pants"}
+ANCHORS = ("show_socks", "roll_hem", "roll_cuffs", "front_tuck")
+
+
+def _upper(garments):
+    """The outermost upper garment: what sets the silhouette's top half."""
+    outer = [g for g in garments if g.slot == "outerwear"]
+    tops = [g for g in garments if g.slot == "top"]
+    return (outer or tops[::-1])[0]
+
+
+def outfit_silhouette(garments) -> str:
+    upper = _upper(garments)
+    bottom = next(g for g in garments if g.slot == "bottom")
+    # A waist-length boxy top over wide trousers reads as an A, not a shapeless block.
+    loose = (upper.fit in {"relaxed", "wide"} and upper.length != "short") or upper.length == "long"
+    if bottom.fit in {"wide", "relaxed"}:
+        return "H" if loose else "A"
+    if bottom.fit in {"tapered", "slim"} and loose:
+        return "Y"
+    return "I"
+
+
+def technique_possible(technique: str, garments, techniques=()) -> bool:
+    tops = [g for g in garments if g.slot == "top"]
+    bottom = next(g for g in garments if g.slot == "bottom")
+    shoes = next(g for g in garments if g.slot == "shoes")
+    if technique == "front_tuck":
+        return len(tops) == 1 and tops[0].kind in TUCKABLE and tops[0].length != "short"
+    if technique == "roll_cuffs":
+        upper = _upper(garments)
+        return upper.kind not in SHORT_SLEEVES | STIFF_SLEEVES
+    if technique == "roll_hem":
+        return bottom.kind in ROLLABLE_HEMS and bottom.length != "short"
+    if technique == "show_socks":
+        exposed = bottom.kind == "shorts" or bottom.length == "short" or "roll_hem" in techniques
+        return exposed and any(g.kind == "socks" for g in garments)
+    if technique == "layered_hem":
+        return len(tops) == 2 or (
+            any(g.slot == "outerwear" for g in garments) and tops[-1].length != "short"
+        )
+    if technique == "tonal_leg":
+        a, b = CATALOG["colors"][bottom.color], CATALOG["colors"][shoes.color]
+        return (a["family"], a["lightness"]) == (b["family"], b["lightness"])
+    return False
+
+
+def is_complete(garments) -> bool:
+    slots = {g.slot for g in garments}
+    return {"top", "bottom", "shoes"} <= slots
+
+
+def needs_anchor(garments, techniques) -> bool:
+    """An H silhouette with nothing held in: no ankle showing and no anchoring technique."""
+    if not is_complete(garments) or outfit_silhouette(garments) != "H":
+        return False
+    bottom = next(g for g in garments if g.slot == "bottom")
+    exposed = bottom.length == "short" or bottom.kind == "shorts"
+    return not exposed and not set(techniques) & set(ANCHORS)
+
+
+def normalize_techniques(garments, techniques) -> list[str]:
+    """Keep the possible techniques once each; give an H silhouette its anchor point."""
+    kept: list[str] = []
+    for t in techniques:
+        if t not in kept and technique_possible(t, garments, kept + list(techniques)):
+            kept.append(t)
+    if needs_anchor(garments, kept):
+        extra = next((t for t in ANCHORS if technique_possible(t, garments, kept)), None)
+        if extra:
+            kept.append(extra)
+    return kept[:3]
+
+
 class BodyOutfit(StrictModel):
     title: Annotated[str, Field(min_length=1, max_length=80)]
     garments: list[Garment] = Field(min_length=3, max_length=7)
@@ -249,6 +336,9 @@ class BodyOutfit(StrictModel):
     color_plan: ColorPlan | None = None
     color_reason: StyleExplanation | None = None
     fabric_reason: StyleExplanation | None = None
+    # Older reports have neither; the server fills both for new and edited outfits.
+    techniques: list[Technique] = Field(default_factory=list, max_length=3)
+    silhouette: Silhouette | None = None
 
     @model_validator(mode="after")
     def complete_outfit(self):
@@ -310,6 +400,13 @@ class DraftOutfit(BodyOutfit):
     color_plan: ColorPlan
     color_reason: StyleExplanation
     fabric_reason: StyleExplanation
+
+    @model_validator(mode="after")
+    def settle_shape(self):
+        # The silhouette always follows the garments; impossible techniques are dropped.
+        self.techniques = normalize_techniques(self.garments, self.techniques)
+        self.silhouette = outfit_silhouette(self.garments)
+        return self
 
     @model_validator(mode="after")
     def grounded_palette(self):

@@ -45,10 +45,11 @@
         {
           "title": {"zh": "条纹 T 恤加宽松卫衣", "en": "Striped tee under a loose sweatshirt"},
           "tags": {"zh": ["条纹", "灰蓝", "乐福鞋混搭"], "en": ["stripes", "grey-blue", "loafers mixed in"]},
+          "techniques": ["layered_hem"],
           "garments": [
             {"slot": "top", "kind": "tshirt", "color": "#efe8dd", "fit": "relaxed", "pattern": "stripe"},
             {"slot": "top", "kind": "sweatshirt", "color": "#465b70", "fit": "relaxed"},
-            {"slot": "bottom", "kind": "trousers", "color": "#d3be97", "fit": "wide"},
+            {"slot": "bottom", "kind": "trousers", "color": "#d3be97", "fit": "wide", "length": "short"},
             {"slot": "shoes", "kind": "loafers", "color": "#744f37"},
             {"slot": "accessory", "kind": "bag", "color": "#3e5143"}
           ]
@@ -56,6 +57,7 @@
         {
           "title": {"zh": "军绿夹克配浅色阔腿裤", "en": "Olive jacket with pale wide trousers"},
           "tags": {"zh": ["军绿", "浅蓝衬衫", "上深下浅"], "en": ["olive", "pale blue shirt", "dark over light"]},
+          "techniques": ["roll_hem", "layered_hem"],
           "garments": [
             {"slot": "top", "kind": "shirt", "color": "#b5ccd4", "fit": "relaxed"},
             {"slot": "outerwear", "kind": "jacket", "color": "#7a7442", "fit": "relaxed"},
@@ -159,6 +161,7 @@
         {
           "title": {"zh": "驼色工装夹克配军绿工装裤", "en": "Camel work jacket with olive cargos"},
           "tags": {"zh": ["工装夹克", "工装裤", "黑靴"], "en": ["work jacket", "cargo trousers", "black boots"]},
+          "techniques": ["roll_hem"],
           "garments": [
             {"slot": "top", "kind": "tshirt", "color": "#ffffff"},
             {"slot": "outerwear", "kind": "jacket", "color": "#b69b79", "fit": "relaxed"},
@@ -169,6 +172,7 @@
         {
           "title": {"zh": "军装衬衫配卡其工装裤", "en": "Field shirt with khaki cargos"},
           "tags": {"zh": ["军绿衬衫", "卡其", "棒球帽"], "en": ["olive shirt", "khaki", "cap"]},
+          "techniques": ["roll_cuffs"],
           "garments": [
             {"slot": "top", "kind": "shirt", "color": "#7a7442", "fit": "relaxed"},
             {"slot": "bottom", "kind": "cargo_pants", "color": "#d3be97", "fit": "wide"},
@@ -179,6 +183,7 @@
         {
           "title": {"zh": "鼠尾草绿衬衫夹克配黑工装裤", "en": "Sage overshirt with black work trousers"},
           "tags": {"zh": ["衬衫夹克", "黑色", "宽裤"], "en": ["overshirt", "black", "wide trousers"]},
+          "techniques": ["roll_cuffs"],
           "garments": [
             {"slot": "top", "kind": "tshirt", "color": "#363c41"},
             {"slot": "outerwear", "kind": "overshirt", "color": "#718575", "fit": "relaxed"},
@@ -283,6 +288,7 @@
         {
           "title": {"zh": "芥末黄针织配褪色牛仔", "en": "Mustard knit with faded denim"},
           "tags": {"zh": ["芥末黄", "褪色牛仔", "乐福鞋"], "en": ["mustard", "faded denim", "loafers"]},
+          "techniques": ["roll_hem", "layered_hem"],
           "garments": [
             {"slot": "top", "kind": "shirt", "color": "#efe8dd"},
             {"slot": "top", "kind": "knit", "color": "#b89a3d", "fit": "relaxed"},
@@ -303,6 +309,7 @@
         {
           "title": {"zh": "波点衬衫配棕色宽裤", "en": "Polka-dot shirt with brown wide trousers"},
           "tags": {"zh": ["波点", "杏黄", "灯芯绒宽裤"], "en": ["polka dot", "apricot", "corduroy wide trousers"]},
+          "techniques": ["front_tuck"],
           "garments": [
             {"slot": "top", "kind": "shirt", "color": "#e8d9a4", "fit": "relaxed", "pattern": "dot"},
             {"slot": "bottom", "kind": "trousers", "color": "#744f37", "fit": "wide", "construction": "corduroy"},
@@ -343,6 +350,7 @@
         {
           "title": {"zh": "米白棉麻衬衫配燕麦阔腿裤", "en": "Off-white cotton-linen shirt, oatmeal wide trousers"},
           "tags": {"zh": ["棉麻", "米白燕麦", "帆布包"], "en": ["cotton-linen", "off-white & oatmeal", "canvas tote"]},
+          "techniques": ["roll_cuffs"],
           "garments": [
             {"slot": "top", "kind": "shirt", "color": "#efe8dd", "fit": "relaxed"},
             {"slot": "bottom", "kind": "trousers", "color": "#d3be97", "fit": "wide"},
@@ -353,6 +361,7 @@
         {
           "title": {"zh": "鼠尾草绿开衫配米白宽裤", "en": "Sage cardigan with off-white wide trousers"},
           "tags": {"zh": ["开衫", "鼠尾草绿", "柔和"], "en": ["cardigan", "sage", "soft"]},
+          "techniques": ["roll_cuffs", "layered_hem"],
           "garments": [
             {"slot": "top", "kind": "tshirt", "color": "#ffffff"},
             {"slot": "top", "kind": "cardigan", "color": "#718575", "fit": "relaxed"},
@@ -363,6 +372,7 @@
         {
           "title": {"zh": "浅蓝条纹衬衫和圆框眼镜", "en": "Pale blue stripes and round glasses"},
           "tags": {"zh": ["条纹衬衫", "圆框眼镜", "文艺"], "en": ["striped shirt", "round glasses", "bookish"]},
+          "techniques": ["roll_hem"],
           "garments": [
             {"slot": "top", "kind": "shirt", "color": "#b5ccd4", "fit": "relaxed", "pattern": "stripe"},
             {"slot": "bottom", "kind": "chinos", "color": "#efe8dd", "fit": "wide"},
@@ -586,7 +596,7 @@
           "tags": {"zh": ["全黑", "长款衬衫", "阔腿"], "en": ["all black", "long shirt", "wide leg"]},
           "garments": [
             {"slot": "top", "kind": "shirt", "color": "#111827", "fit": "relaxed", "length": "long"},
-            {"slot": "bottom", "kind": "trousers", "color": "#111827", "fit": "wide"},
+            {"slot": "bottom", "kind": "trousers", "color": "#111827", "fit": "wide", "length": "short"},
             {"slot": "shoes", "kind": "derbies", "color": "#111827"}
           ]
         },
@@ -596,7 +606,7 @@
           "garments": [
             {"slot": "top", "kind": "tshirt", "color": "#111827", "length": "long"},
             {"slot": "outerwear", "kind": "coat", "color": "#363c41", "fit": "relaxed", "length": "long"},
-            {"slot": "bottom", "kind": "trousers", "color": "#111827", "fit": "wide"},
+            {"slot": "bottom", "kind": "trousers", "color": "#111827", "fit": "wide", "length": "short"},
             {"slot": "shoes", "kind": "boots", "color": "#111827"}
           ]
         },
@@ -606,7 +616,7 @@
           "garments": [
             {"slot": "top", "kind": "turtleneck", "color": "#111827"},
             {"slot": "outerwear", "kind": "blazer", "color": "#111827", "fit": "relaxed", "length": "long"},
-            {"slot": "bottom", "kind": "trousers", "color": "#363c41", "fit": "wide"},
+            {"slot": "bottom", "kind": "trousers", "color": "#363c41", "fit": "wide", "length": "short"},
             {"slot": "shoes", "kind": "derbies", "color": "#111827"}
           ]
         }
@@ -643,6 +653,7 @@
         {
           "title": {"zh": "黑色连帽卫衣配深灰工装裤", "en": "Black hoodie with charcoal cargos"},
           "tags": {"zh": ["连帽卫衣", "工装裤", "棒球帽"], "en": ["hoodie", "cargo trousers", "cap"]},
+          "techniques": ["roll_hem"],
           "garments": [
             {"slot": "top", "kind": "hoodie", "color": "#111827", "fit": "relaxed"},
             {"slot": "bottom", "kind": "cargo_pants", "color": "#363c41", "fit": "wide"},
@@ -653,6 +664,7 @@
         {
           "title": {"zh": "宝蓝夹克和砖红球鞋", "en": "Royal blue jacket and brick-red sneakers"},
           "tags": {"zh": ["宝蓝", "黑色宽牛仔", "亮色球鞋"], "en": ["royal blue", "wide black denim", "bright sneakers"]},
+          "techniques": ["roll_hem", "layered_hem"],
           "garments": [
             {"slot": "top", "kind": "tshirt", "color": "#ffffff", "fit": "relaxed", "length": "long"},
             {"slot": "outerwear", "kind": "jacket", "color": "#3056a0", "fit": "relaxed"},

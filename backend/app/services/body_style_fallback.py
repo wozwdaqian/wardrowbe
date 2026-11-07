@@ -6,13 +6,23 @@ The draft is assembled from `StyleRules` and the catalog, then passes through th
 
 import json
 import random
+from types import SimpleNamespace
 
 from pydantic import ValidationError
 
-from app.schemas.body_styling import SLOT_KINDS, BodyFact, BodyStyleContent, DraftOutfit
+from app.schemas.body_styling import (
+    ANCHORS,
+    SLOT_KINDS,
+    BodyFact,
+    BodyStyleContent,
+    DraftOutfit,
+    needs_anchor,
+    normalize_techniques,
+    technique_possible,
+)
 from app.schemas.styling_profile import CATALOG, STYLE_DATA, StylingProfile
 from app.services.body_style_rendering import COLORS, FITS, KINDS, LENGTHS, PANT_LENGTHS, RISES
-from app.services.body_style_rules import StyleRules, outfit_violations
+from app.services.body_style_rules import StyleRules, apply_remedies, outfit_violations
 
 NEUTRALS = {"white", "grey", "black", "beige", "brown"}
 # Ordered fallbacks: the first material/construction that the rules allow is used.
@@ -117,6 +127,9 @@ def _allowed(rules: StyleRules, slot: str, kind: str) -> bool:
         return False
     if _material(kind, slot, rules) is None:
         return False
+    warm_enough = rules.season_rule.outerwear_kinds
+    if slot == "outerwear" and warm_enough and kind not in warm_enough:
+        return False
     return (
         kind in rules.occasion_rule.allowed_kinds.get(slot, [])
         and kind not in rules.season_rule.banned_kinds
@@ -189,14 +202,15 @@ def _fabric(kind: str, slot: str, material: str, rules: StyleRules) -> dict | No
     elif "linen_weave" in options and len(options) > 1:
         options.remove("linen_weave")
     construction = options[0] if options else "technical"
-    season = rules.season
-    weight = (
-        "light"
-        if season == "summer"
-        else "heavy"
-        if season == "winter" and slot == "outerwear"
-        else "medium"
-    )
+    season, band = rules.season, rules.temperature_band
+    hot = season == "summer" or band in {"hot", "warm"}
+    cold = (season == "winter" and band not in {"mild", "warm", "hot"}) or band in {
+        "cold",
+        "freezing",
+    }
+    weight = "light" if hot else "heavy" if cold and slot == "outerwear" else "medium"
+    if weight in rules.season_rule.banned_weights:
+        weight = "medium"
     return {
         "construction": construction,
         "weight": weight,
@@ -204,6 +218,16 @@ def _fabric(kind: str, slot: str, material: str, rules: StyleRules) -> dict | No
         "sheen": "matte",
         "stretch": "slight" if slot == "bottom" else "none",
     }
+
+
+def _anchor_cut(garments: list[dict], rules: StyleRules) -> None:
+    """Crop the trousers to ankle length when a loose-over-wide outfit has nothing else to anchor it."""
+    shape = [SimpleNamespace(**g) for g in garments]
+    possible = [t for t in ANCHORS if technique_possible(t, shape)]
+    if needs_anchor(shape, possible):
+        bottom = next(g for g in garments if g["slot"] == "bottom")
+        if "short" not in _avoided(rules, "bottom", "length"):
+            bottom["length"] = "short"
 
 
 class Palette:
@@ -318,6 +342,7 @@ def _outfit(index, look, rules, palette, zh, available, used_tops):
     if rules.occasion in {"work", "formal"} and _allowed(rules, "accessory", "belt"):
         belt = _garment("accessory", "belt", shoe_color, rules, zh)
         garments.append(belt)
+    _anchor_cut(garments, rules)
     if strategy == "contrast" and len({palette.lightness[g["color"]] for g in garments}) == 1:
         garments[0]["color"] = palette.light(exclude=[garments[0]["color"]])
     if rules.occasion == "formal" and all(
@@ -353,6 +378,7 @@ def _outfit(index, look, rules, palette, zh, available, used_tops):
     outfit = {
         "title": title,
         "garments": garments,
+        "techniques": ["layered_hem"] if mid else ["front_tuck"],
         "body_reason": body_reason,
         "evidence": ((["height", "waist"] if measured else ["rule_occasion"]) + rule_evidence)[:5],
         "styling_tip": _text(
@@ -455,9 +481,20 @@ def direction_looks(direction: list[str]) -> list[tuple[str, int]]:
     return main
 
 
-def _keep(value: str, values: list[str], rules: StyleRules, slot: str, attribute: str) -> str:
-    """The template's own cut unless a proportion rule avoids it."""
+def _keep(
+    value: str,
+    values: list[str],
+    rules: StyleRules,
+    slot: str,
+    attribute: str,
+    remedy: bool = False,
+) -> str:
+    """The template's own cut unless a proportion rule avoids it without a remedy to try."""
     if value not in _avoided(rules, slot, attribute):
+        return value
+    if remedy and any(
+        rule.remedy_for(attribute, value) for rule in rules.proportion.values() if rule.slot == slot
+    ):
         return value
     return _choose(values, rules, slot, attribute, "regular" if attribute != "rise" else "mid")
 
@@ -470,32 +507,88 @@ def _similar(palette: Palette, color: str, exclude=()) -> str:
     return palette._pick(lambda h: palette.lightness[h] == wanted, exclude)
 
 
-def _template_garment(spec: dict, kind: str, color: str, rules: StyleRules, zh: bool) -> dict:
+def _template_garment(
+    spec: dict, kind: str, color: str, rules: StyleRules, zh: bool, remedy: bool
+) -> dict:
     slot = spec["slot"]
     g = _garment(slot, kind, color, rules, zh, spec.get("pattern", "solid"))
+
+    def keep(attribute, default, values):
+        return _keep(spec.get(attribute, default), values, rules, slot, attribute, remedy)
+
     if slot in {"top", "outerwear"}:
-        g["fit"] = _keep(
-            spec.get("fit", "regular"), ["slim", "regular", "relaxed"], rules, slot, "fit"
-        )
-        g["length"] = _keep(
-            spec.get("length", g["length"]), ["short", "regular", "long"], rules, slot, "length"
-        )
+        g["fit"] = keep("fit", "regular", ["slim", "regular", "relaxed"])
+        g["length"] = keep("length", g["length"], ["short", "regular", "long"])
     if slot == "bottom":
-        fits = ["slim", "regular", "relaxed", "wide", "tapered"]
-        g["fit"] = _keep(spec.get("fit", "regular"), fits, rules, slot, "fit")
+        g["fit"] = keep("fit", "regular", ["slim", "regular", "relaxed", "wide", "tapered"])
         g["length"] = (
-            "short"
-            if kind == "shorts"
-            else _keep(
-                spec.get("length", "regular"), ["short", "regular", "long"], rules, slot, "length"
-            )
+            "short" if kind == "shorts" else keep("length", "regular", ["short", "regular", "long"])
         )
-        g["rise"] = _keep(spec.get("rise", "mid"), ["low", "mid", "high"], rules, slot, "rise")
+        g["rise"] = keep("rise", "mid", ["low", "mid", "high"])
     construction = spec.get("construction")
     banned = set(rules.season_rule.banned_constructions)
     if construction and g["fabric"] and construction not in banned and kind == spec["kind"]:
         g["fabric"]["construction"] = construction
     return g
+
+
+TECHNIQUE_TIPS = {
+    "front_tuck": (
+        "上衣只把前摆塞进裤腰，侧面和后面自然垂下，腰线和腿长都更清楚。",
+        "Tuck just the front of the top into the trousers and leave the sides out for a "
+        "clearer waist and longer legs.",
+    ),
+    "roll_cuffs": (
+        "袖口卷起一到两折露出手腕，宽松的上身就有了收住的地方。",
+        "Roll the cuffs once or twice to show the wrists, so the loose top is held in somewhere.",
+    ),
+    "roll_hem": (
+        "裤脚向上卷一到两折停在脚踝附近，不在鞋面堆积。",
+        "Roll the hems once or twice to stop near the ankle instead of bunching on the shoe.",
+    ),
+    "show_socks": (
+        "裤脚停在脚踝上方露出一截袜子，和帽子或上衣颜色呼应。",
+        "Let the hem stop above the ankle so a strip of sock shows, echoing the hat or top.",
+    ),
+    "layered_hem": (
+        "内层领口和下摆略露出外层，形成清楚的层次。",
+        "Let the inner layer's collar and hem show slightly for a clean layered look.",
+    ),
+    "tonal_leg": (
+        "裤子和鞋用同一色调，腿部线条从腰一直延伸到脚。",
+        "Trousers and shoes in one tone carry the leg line from waist to foot.",
+    ),
+}
+
+
+def technique_tip(techniques: list[str], zh: bool) -> str:
+    parts = [TECHNIQUE_TIPS[t][0 if zh else 1] for t in techniques[:2]]
+    return ("" if zh else " ").join(parts) or _text(
+        zh,
+        "整套保持干净平整，以坐下和走动时都舒适为准微调。",
+        "Keep everything clean and pressed, and adjust until sitting and walking feel easy.",
+    )
+
+
+def _planned_techniques(garments: list[dict], designed=()) -> list[str]:
+    """The look's own techniques, then those a stylist would reach for first.
+
+    The schema keeps the first three that are possible with the final garments.
+    """
+    tops = [g for g in garments if g["slot"] == "top"]
+    bottom = next(g for g in garments if g["slot"] == "bottom")
+    planned = list(designed)
+    if any(g["kind"] == "socks" for g in garments):
+        if bottom["length"] != "short" and bottom["kind"] != "shorts":
+            planned.append("roll_hem")
+        planned.append("show_socks")
+    planned.append("layered_hem" if len(tops) == 2 else "front_tuck")
+    # Same-tone trousers and shoes count when the colors already match.
+    planned.append("tonal_leg")
+    shape = [SimpleNamespace(**g) for g in garments]
+    if not any(technique_possible(t, shape, planned) for t in planned):
+        planned.append("roll_cuffs")
+    return normalize_techniques(shape, planned)
 
 
 def _color_plan(outfit: dict) -> dict | None:
@@ -533,7 +626,19 @@ def _color_plan(outfit: dict) -> dict | None:
 
 
 def _template_outfit(style_id, look_index, rules, palette, zh, available) -> dict | None:
-    """One look from the Japanese style data, adapted to the rules; None if it cannot be."""
+    """One look from the Japanese style data, adapted to the rules; None if it cannot be.
+
+    The template's cut is kept with a remedy technique (a tucked long top) when a proportion
+    rule would otherwise change it; without a workable remedy the rule's own cut is used.
+    """
+    for remedy in (True, False):
+        outfit = _template_attempt(style_id, look_index, rules, palette, zh, available, remedy)
+        if outfit:
+            return outfit
+    return None
+
+
+def _template_attempt(style_id, look_index, rules, palette, zh, available, remedy):
     look = STYLES[style_id]["looks"][look_index]
     garments, changed = [], False
     used: list[str] = []
@@ -551,7 +656,7 @@ def _template_outfit(style_id, look_index, rules, palette, zh, available) -> dic
         color = _similar(palette, spec["color"], used)
         changed |= color != spec["color"]
         used.append(color)
-        garments.append(_template_garment(spec, kind, color, rules, zh))
+        garments.append(_template_garment(spec, kind, color, rules, zh, remedy))
     slots = {g["slot"] for g in garments}
     wants_outer = rules.season_rule.requires_outerwear or (
         rules.occasion in {"work", "formal"} and rules.season != "summer"
@@ -570,6 +675,7 @@ def _template_outfit(style_id, look_index, rules, palette, zh, available) -> dic
         changed = True
     if sum(g["pattern"] in BOLD for g in garments) > 1:
         return None
+    _anchor_cut(garments, rules)
     lang = 0 if zh else 1
     top = next(g for g in garments if g["slot"] == "top")
     bottom = next(g for g in garments if g["slot"] == "bottom")
@@ -597,40 +703,15 @@ def _template_outfit(style_id, look_index, rules, palette, zh, available) -> dic
         + (f", {pants}" if pants else "")
         + ".",
     )
-    loose_top = top["fit"] in {"relaxed", "wide"}
-    loose_bottom = bottom["fit"] in {"relaxed", "wide"}
-    socks = any(g["kind"] == "socks" for g in garments)
-    if socks and bottom["length"] == "short":
-        tip = _text(
-            zh,
-            "九分裤脚停在脚踝上方，露出一截袜子，和帽子或上衣颜色呼应。",
-            "Let the ankle-length hem stop above the ankle so a strip of sock shows, echoing the hat or top.",
-        )
-    elif loose_top and loose_bottom:
-        tip = _text(
-            zh,
-            "上下都宽松时要收住一处：裤脚露出脚踝，或把袖口卷起一到两折。",
-            "When top and bottom are both loose, anchor one point: show the ankle or roll the cuffs once or twice.",
-        )
-    elif sum(g["slot"] == "top" for g in garments) == 2:
-        tip = _text(
-            zh,
-            "内层领口和下摆略露出外层，形成清楚的层次。",
-            "Let the base layer's collar and hem show slightly for a clean layered look.",
-        )
-    else:
-        tip = _text(
-            zh,
-            "上衣前摆轻塞进裤腰，侧面和后面自然垂下，腰线更清楚。",
-            "Tuck just the front of the top into the trousers and leave the sides out for a clearer waistline.",
-        )
+    techniques = _planned_techniques(garments, look.get("techniques", []))
     rule_evidence = [e for e in ("rule_trouser_leg", "rule_top_length") if e in available]
     outfit = {
         "title": title[:80],
         "garments": garments,
         "body_reason": body_reason,
         "evidence": ((["height", "waist"] if measured else ["rule_occasion"]) + rule_evidence)[:5],
-        "styling_tip": tip,
+        "styling_tip": technique_tip(techniques, zh),
+        "techniques": techniques,
         "color_reason": {
             "text": COLOR_TEXTS["tonal"][lang],
             "evidence": [
@@ -655,8 +736,13 @@ def _template_outfit(style_id, look_index, rules, palette, zh, available) -> dic
         draft = DraftOutfit.model_validate(outfit)
     except ValidationError:
         return None
-    if outfit_violations(draft.garments, rules):
+    # The schema settled which techniques are possible (adding an anchor for an H shape);
+    # remedies come next, and the tip describes exactly what is left.
+    techniques = apply_remedies(draft.garments, draft.techniques, rules)
+    if outfit_violations(draft.garments, rules, techniques):
         return None
+    outfit["techniques"] = techniques
+    outfit["styling_tip"] = technique_tip(techniques, zh)
     return outfit
 
 
@@ -828,7 +914,8 @@ def today_outfit(
     outfit = DraftOutfit.model_validate(
         template or _outfit(index, look, rules, palette, zh, available, [])
     )
-    errors = outfit_violations(outfit.garments, rules)
+    techniques = apply_remedies(outfit.garments, outfit.techniques, rules)
+    errors = outfit_violations(outfit.garments, rules, techniques)
     if errors:
         raise ValueError("; ".join(errors))
     resolve = lambda text: resolve_text(text, facts, outfit.evidence, zh)  # noqa: E731
@@ -840,4 +927,6 @@ def today_outfit(
         "color_plan": outfit.color_plan.model_dump(),
         "color_reason": resolve(outfit.color_reason.text),
         "evidence": outfit.evidence,
+        "techniques": techniques,
+        "silhouette": outfit.silhouette,
     }

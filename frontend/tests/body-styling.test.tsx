@@ -2,6 +2,7 @@ import React from "react";
 import { describe, it, expect, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { OutfitIllustration } from "@/components/body-styling/outfit-illustration";
+import { OutfitShape } from "@/components/body-styling/outfit-shape";
 import {
   Garment,
   BodyOutfit,
@@ -73,6 +74,31 @@ describe("body styling illustrations", () => {
     // Two ankle bands, one per leg, only when the hem stops above the shoe.
     expect(draw(tapered).match(/fill="#fafafa"/g)).toHaveLength(2);
     expect(draw(bottom).match(/fill="#fafafa"/g)).toHaveLength(1);
+  });
+  it("draws a front tuck and rolled hems only when the outfit lists them", () => {
+    const plain = renderToStaticMarkup(<OutfitIllustration outfit={outfit} />);
+    expect(plain).not.toContain("front-tuck");
+    expect(plain).not.toContain("rolled-hem");
+    const styled = renderToStaticMarkup(
+      <OutfitIllustration
+        outfit={{
+          ...outfit,
+          garments: [top, { ...bottom, kind: "chinos" }, shoes],
+          techniques: ["front_tuck", "roll_hem"],
+        }}
+      />,
+    );
+    expect(styled).toContain('data-testid="front-tuck"');
+    expect(styled).toContain('data-testid="rolled-hem"');
+  });
+  it("labels the silhouette and techniques, with the hint spelled out on request", () => {
+    const markup = renderToStaticMarkup(
+      <OutfitShape silhouette="H" techniques={["roll_cuffs"]} showHint />,
+    );
+    expect(markup).toContain("silhouette.H");
+    expect(markup).toContain("technique.roll_cuffs");
+    expect(markup).toContain("silhouetteHint.H");
+    expect(renderToStaticMarkup(<OutfitShape />)).toBe("");
   });
   it("renders optional outerwear and accessories without remote assets", () => {
     const markup = renderToStaticMarkup(

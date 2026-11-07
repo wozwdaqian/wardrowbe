@@ -35,6 +35,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { OutfitShape } from "@/components/body-styling/outfit-shape";
 import { OutfitIllustration } from "@/components/body-styling/outfit-illustration";
 import { StylingProfileEditor } from "@/components/body-styling/styling-profile-editor";
 import {
@@ -1115,7 +1116,12 @@ export default function BodyStylingPage() {
                           <h3 className="mb-1 text-xs font-semibold">
                             {t("tip")}
                           </h3>
-                          <p className="text-xs leading-6 text-muted-foreground">
+                          <OutfitShape
+                            silhouette={outfit.silhouette}
+                            techniques={outfit.techniques}
+                            showHint
+                          />
+                          <p className="mt-2 text-xs leading-6 text-muted-foreground">
                             {outfit.styling_tip}
                           </p>
                         </div>

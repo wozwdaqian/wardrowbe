@@ -221,6 +221,21 @@ explain this in outfit.fabric_reason. Return global color_guidance and fabric_gu
 reasoning dimensions (body fit, personal color, item fabrics, outfit coordination) must be concrete.
 Keep internal field names out of prose; references belong in evidence arrays or {{fact_id}} tokens.
 
+SILHOUETTE AND WEARING TECHNIQUES:
+The server derives each outfit's silhouette from the outermost upper garment and the trousers:
+I (straight), A (fitted top over wide trousers), Y (loose or long top over tapered/slim trousers)
+and H (loose top over wide trousers). An H outfit must be anchored at one point. List up to three
+`techniques` you actually describe in styling_tip: front_tuck (one tuckable top, not short),
+roll_cuffs (long, soft sleeves on the outermost layer), roll_hem (jeans, chinos or cargos that are
+not ankle length), show_socks (socks with ankle-length trousers, shorts or a rolled hem),
+layered_hem (two tops, or a top under outerwear) and tonal_leg (trousers and shoes in the same
+color family and lightness). Impossible techniques are dropped. A proportion rule's `remedies`
+maps an avoided "attribute=value" to techniques that make it work: you may keep that value only
+when the outfit lists one of those techniques. Warmth must agree across an outfit: never combine
+coats, down, fleece or heavy fabric with shorts or sandals. When rules.temperature_band is set,
+dress for that temperature; season.outerwear_kinds, when not empty, lists the only warm enough
+outerwear.
+
 STYLE RULES CONTRACT:
 The server computed `rules` from the measurements, goals, fit concerns, season and occasion. They are
 hard limits: use only garment kinds allowed for the occasion, respect season bans on kinds, materials,

@@ -220,10 +220,17 @@ export function OutfitIllustration({ outfit }: { outfit: BodyOutfit }) {
   const outer = outfit.garments.find((g) => g.slot === "outerwear");
   const accessories = outfit.garments.filter((g) => g.slot === "accessory");
   const tie = accessories.find((g) => g.kind === "tie");
-  // Socks show at the ankle under ankle-length trousers or shorts; otherwise they sit beside the figure.
+  const techniques = outfit.techniques || [];
+  const rolledHem = techniques.includes("roll_hem");
+  // Tucking only shows when the top's hem actually falls below the waistband.
+  const tucked =
+    techniques.includes("front_tuck") && !tie && !outer && tops.length === 1;
+  // Socks show at the ankle under ankle-length trousers, shorts or rolled hems; otherwise
+  // they sit beside the figure.
   const socks = accessories.find((g) => g.kind === "socks");
   const showSocks =
-    socks && (bottom.length === "short" || bottom.kind === "shorts");
+    socks &&
+    (bottom.length === "short" || bottom.kind === "shorts" || rolledHem);
   const side = accessories.filter(
     (g) => g !== tie && !(showSocks && g === socks),
   );
@@ -273,6 +280,15 @@ export function OutfitIllustration({ outfit }: { outfit: BodyOutfit }) {
         {bottom.kind === "cargo_pants" && (
           <path d="M1 92H17V122H1ZM83 92H99V122H83Z" fill="none" />
         )}
+        {rolledHem && (
+          // A turned-up cuff on each leg.
+          <path
+            d={`M${bm.hemInset} 178H${40 + bm.hemInset / 2}V197H${bm.hemInset}ZM${60 - bm.hemInset / 2} 178H${100 - bm.hemInset}V197H${60 - bm.hemInset / 2}Z`}
+            fill="black"
+            fillOpacity=".12"
+            data-testid="rolled-hem"
+          />
+        )}
       </g>
       {outer && (
         <Top
@@ -302,6 +318,16 @@ export function OutfitIllustration({ outfit }: { outfit: BodyOutfit }) {
         height={tm.topHeight}
         fill={fill(top)}
       />
+      {tucked && (
+        // The front of the top tucked in: trousers show in the middle below the waistband.
+        <path
+          d={`M${160 - tm.width * 0.22} ${bm.bottomY + 2}H${160 + tm.width * 0.22}V${49 + tm.topHeight}Q160 ${49 + tm.topHeight - 6} ${160 - tm.width * 0.22} ${49 + tm.topHeight}Z`}
+          fill={fill(bottom)}
+          stroke="#283831"
+          strokeOpacity=".3"
+          data-testid="front-tuck"
+        />
+      )}
       {tie && (
         <path
           d="M156 66H164L167 74 163 130 160 136 157 130 153 74Z"

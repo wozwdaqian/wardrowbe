@@ -363,5 +363,33 @@
     "brands": "代表品牌",
     "ranking": "各風格得分",
     "error": "出了點問題，請重試。"
+  },
+  "silhouette": {
+    "I": "I line · straight",
+    "A": "A line · fitted over wide",
+    "Y": "Y line · loose over narrow",
+    "H": "H line · wide all over"
+  },
+  "silhouetteHint": {
+    "I": "Top and trousers are about the same width; a clean, straight line.",
+    "A": "A fitted or short top over wide trousers; the weight sits low.",
+    "Y": "A loose or long top over narrower trousers; the weight sits high.",
+    "H": "Loose top and wide trousers; anchor one point with a bare ankle, rolled cuffs or a tuck."
+  },
+  "technique": {
+    "front_tuck": "Front tuck",
+    "roll_cuffs": "Rolled cuffs",
+    "roll_hem": "Rolled hems",
+    "show_socks": "Socks on show",
+    "layered_hem": "Inner hem showing",
+    "tonal_leg": "Trousers and shoes in one tone"
+  },
+  "band": {
+    "hot": "Above 26°C: one breathable layer, no jacket.",
+    "warm": "21–25°C: mostly one layer, a light shirt to hand.",
+    "mild": "16–20°C: long sleeves or a light jacket; add a layer morning and evening.",
+    "cool": "11–15°C: a jacket over one inner layer.",
+    "cold": "6–10°C: a warm jacket or fleece over knitwear.",
+    "freezing": "Below 5°C: a coat or down jacket; keep the neck warm."
   }
 }
