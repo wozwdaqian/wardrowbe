@@ -144,7 +144,17 @@ export const GARMENT_KINDS = {
     "down_jacket",
     "fleece",
   ],
-  accessory: ["scarf", "belt", "bag", "cap", "tie", "watch", "glasses"],
+  accessory: [
+    "scarf",
+    "belt",
+    "bag",
+    "cap",
+    "bucket_hat",
+    "socks",
+    "tie",
+    "watch",
+    "glasses",
+  ],
 } as const;
 export type GarmentKind =
   (typeof GARMENT_KINDS)[keyof typeof GARMENT_KINDS][number];
@@ -153,7 +163,8 @@ export type Garment = {
   kind: GarmentKind;
   color: string;
   color_name: string;
-  fit: "slim" | "regular" | "relaxed" | "wide";
+  // Tapered is for trousers only: room at the thigh, narrowing to the hem.
+  fit: "slim" | "regular" | "relaxed" | "wide" | "tapered";
   length: "short" | "regular" | "long";
   rise: "low" | "mid" | "high" | null;
   pattern?: keyof typeof catalog.patterns;
@@ -226,12 +237,20 @@ export type AIStatus = {
 
 // The same validated visual attributes shown in the text determine the drawing.
 export function silhouetteMetrics(garment: Garment) {
-  const width = { slim: 72, regular: 86, relaxed: 101, wide: 116 }[garment.fit];
+  const width = {
+    slim: 72,
+    regular: 86,
+    relaxed: 101,
+    wide: 116,
+    tapered: 101,
+  }[garment.fit];
+  // How far each trouser hem moves in from a straight leg, in leg-path units.
+  const hemInset = garment.fit === "tapered" ? 10 : 0;
   const topHeight = { short: 93, regular: 112, long: 136 }[garment.length];
   const bottomY = { high: 136, mid: 149, low: 161 }[garment.rise || "mid"];
   const legHeight =
     garment.kind === "shorts"
       ? 88
       : { short: 157, regular: 177, long: 192 }[garment.length];
-  return { width, topHeight, bottomY, legHeight };
+  return { width, topHeight, bottomY, legHeight, hemInset };
 }

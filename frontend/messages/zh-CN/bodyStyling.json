@@ -161,7 +161,9 @@
     "scarf": "围巾",
     "belt": "腰带",
     "bag": "包",
-    "cap": "帽子",
+    "cap": "棒球帽",
+    "bucket_hat": "渔夫帽",
+    "socks": "袜子",
     "turtleneck": "高领衫",
     "cardigan": "开衫",
     "vest": "马甲",
@@ -183,7 +185,8 @@
     "slim": "修身",
     "regular": "合体",
     "relaxed": "宽松",
-    "wide": "宽廓形"
+    "wide": "宽廓形",
+    "tapered": "锥形"
   },
   "length": {
     "short": "短款",

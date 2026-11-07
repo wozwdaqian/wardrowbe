@@ -162,6 +162,8 @@
     "belt": "Belt",
     "bag": "Bag",
     "cap": "Cap",
+    "bucket_hat": "Bucket hat",
+    "socks": "Socks",
     "turtleneck": "터틀넥",
     "cardigan": "카디건",
     "vest": "베스트",
@@ -183,7 +185,8 @@
     "slim": "Slim",
     "regular": "Regular",
     "relaxed": "Relaxed",
-    "wide": "Wide"
+    "wide": "Wide",
+    "tapered": "Tapered"
   },
   "length": {
     "short": "Short",

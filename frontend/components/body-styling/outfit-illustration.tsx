@@ -148,6 +148,13 @@ function Accessory({
         </>
       ) : g.kind === "cap" ? (
         <path d="M-20 0Q-20-24 0-24T20 0L30 8H-20Z" />
+      ) : g.kind === "bucket_hat" ? (
+        <>
+          <path d="M-14 0Q-14-22 0-22T14 0Z" />
+          <path d="M-26 8Q0-4 26 8L20 0H-20Z" />
+        </>
+      ) : g.kind === "socks" ? (
+        <path d="M-6-20H6V8Q6 12 12 13L18 14Q22 16 20 21H-2Q-6 21-6 15Z" />
       ) : g.kind === "scarf" ? (
         <>
           <path d="M-13-15H12L6 10 18 41H4L-7 16-15 40H-26L-9 6Z" />
@@ -213,7 +220,13 @@ export function OutfitIllustration({ outfit }: { outfit: BodyOutfit }) {
   const outer = outfit.garments.find((g) => g.slot === "outerwear");
   const accessories = outfit.garments.filter((g) => g.slot === "accessory");
   const tie = accessories.find((g) => g.kind === "tie");
-  const side = accessories.filter((g) => g !== tie);
+  // Socks show at the ankle under ankle-length trousers or shorts; otherwise they sit beside the figure.
+  const socks = accessories.find((g) => g.kind === "socks");
+  const showSocks =
+    socks && (bottom.length === "short" || bottom.kind === "shorts");
+  const side = accessories.filter(
+    (g) => g !== tie && !(showSocks && g === socks),
+  );
   const tm = silhouetteMetrics(top),
     bm = silhouetteMetrics(bottom);
   const legWidth = bm.width * 0.79,
@@ -246,12 +259,17 @@ export function OutfitIllustration({ outfit }: { outfit: BodyOutfit }) {
         strokeOpacity=".35"
         strokeWidth="1.5"
       >
-        <path d="M6 0H94L100 197H60L50 51 40 197H0Z" />
+        <path
+          d={`M6 0H94L${100 - bm.hemInset} 197H${60 - bm.hemInset / 2}L50 51 ${40 + bm.hemInset / 2} 197H${bm.hemInset}Z`}
+        />
         <path
           d="M7 10H93M50 1V38M8 21Q28 22 30 11M92 21Q72 22 70 11"
           fill="none"
         />
-        <path d="M5 190H39M61 190H96" fill="none" />
+        <path
+          d={`M${5 + bm.hemInset} 190H${39 + bm.hemInset / 2}M${61 - bm.hemInset / 2} 190H${96 - bm.hemInset}`}
+          fill="none"
+        />
         {bottom.kind === "cargo_pants" && (
           <path d="M1 92H17V122H1ZM83 92H99V122H83Z" fill="none" />
         )}
@@ -309,6 +327,19 @@ export function OutfitIllustration({ outfit }: { outfit: BodyOutfit }) {
           <path d="M119 68 122 146M201 68 198 146" />
         </g>
       )}
+      {showSocks &&
+        [-1, 1].map((side) => (
+          <rect
+            key={`sock${side}`}
+            x={160 + side * 26 - 8}
+            y={shoeY - 14}
+            width="16"
+            height="14"
+            fill={fill(socks)}
+            stroke="#283831"
+            strokeOpacity=".3"
+          />
+        ))}
       {[-1, 1].map((side) => (
         <g
           key={side}

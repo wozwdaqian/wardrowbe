@@ -54,6 +54,26 @@ describe("body styling illustrations", () => {
       silhouetteMetrics({ ...bottom, length: "short" }).legHeight,
     ).toBeLessThan(silhouetteMetrics(bottom).legHeight);
   });
+  it("narrows tapered hems and shows socks under ankle-length trousers", () => {
+    const tapered: Garment = { ...bottom, fit: "tapered", length: "short" };
+    expect(silhouetteMetrics(tapered).hemInset).toBeGreaterThan(0);
+    expect(silhouetteMetrics(bottom).hemInset).toBe(0);
+    const socks: Garment = {
+      ...top,
+      slot: "accessory",
+      kind: "socks",
+      color: "#fafafa",
+    };
+    const draw = (trousers: Garment) =>
+      renderToStaticMarkup(
+        <OutfitIllustration
+          outfit={{ ...outfit, garments: [top, trousers, shoes, socks] }}
+        />,
+      );
+    // Two ankle bands, one per leg, only when the hem stops above the shoe.
+    expect(draw(tapered).match(/fill="#fafafa"/g)).toHaveLength(2);
+    expect(draw(bottom).match(/fill="#fafafa"/g)).toHaveLength(1);
+  });
   it("renders optional outerwear and accessories without remote assets", () => {
     const markup = renderToStaticMarkup(
       <OutfitIllustration

@@ -63,7 +63,15 @@ export function FabricPattern({
   return (
     <pattern id={id} width="8" height="8" patternUnits="userSpaceOnUse">
       <rect width="8" height="8" fill={garment.color} />
-      {!construction ? null : diagonal ? (
+      {!construction ? null : construction === "corduroy" ? (
+        // Corduroy: soft vertical wales.
+        <path
+          d="M2 0V8M6 0V8"
+          stroke="black"
+          strokeOpacity=".14"
+          strokeWidth="1.6"
+        />
+      ) : diagonal ? (
         <path
           d="M-2 2 2-2M0 8 8 0M6 10 10 6"
           stroke="white"

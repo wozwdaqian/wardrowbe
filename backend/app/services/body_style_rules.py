@@ -155,7 +155,7 @@ SEASONS = {
             "scarf",
         ],
         banned_weights=["heavy"],
-        banned_constructions=["flannel", "fleece"],
+        banned_constructions=["flannel", "fleece", "corduroy"],
         banned_materials=["wool"],
     ),
     "autumn": SeasonRule(banned_kinds=["sandals"], banned_constructions=["mesh"]),
@@ -176,10 +176,19 @@ def _without(*kinds: str) -> dict[str, list[str]]:
 OCCASIONS = {
     "daily": OccasionRule(allowed_kinds=EVERYTHING),
     "weekend": OccasionRule(allowed_kinds=EVERYTHING),
-    "date": OccasionRule(allowed_kinds=_without("sweatshirt", "hoodie", "cap", "sandals")),
+    "date": OccasionRule(
+        allowed_kinds=_without("sweatshirt", "hoodie", "cap", "bucket_hat", "sandals")
+    ),
     "work": OccasionRule(
         allowed_kinds=_without(
-            "shorts", "cap", "sweatshirt", "hoodie", "cargo_pants", "fleece", "sandals"
+            "shorts",
+            "cap",
+            "bucket_hat",
+            "sweatshirt",
+            "hoodie",
+            "cargo_pants",
+            "fleece",
+            "sandals",
         )
     ),
     "formal": OccasionRule(
@@ -188,7 +197,7 @@ OCCASIONS = {
             "bottom": ["trousers"],
             "shoes": ["derbies", "loafers", "oxfords"],
             "outerwear": ["blazer", "suit_jacket", "coat", "trench"],
-            "accessory": ["bag", "belt", "glasses", "scarf", "tie", "watch"],
+            "accessory": ["bag", "belt", "glasses", "scarf", "socks", "tie", "watch"],
         },
         taboos=["all_white"],
     ),

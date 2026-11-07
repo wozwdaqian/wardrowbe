@@ -123,7 +123,17 @@ SLOT_KINDS = {
         "down_jacket",
         "fleece",
     },
-    "accessory": {"scarf", "belt", "bag", "cap", "tie", "watch", "glasses"},
+    "accessory": {
+        "scarf",
+        "belt",
+        "bag",
+        "cap",
+        "bucket_hat",
+        "socks",
+        "tie",
+        "watch",
+        "glasses",
+    },
 }
 GarmentKind = Literal[*sorted(set().union(*SLOT_KINDS.values()))]
 # A second top is a layer: one base piece worn under one mid layer.
@@ -143,7 +153,7 @@ class GarmentAttributes(StrictModel):
     slot: Literal["top", "bottom", "shoes", "outerwear", "accessory"]
     kind: GarmentKind
     color: str = Field(pattern=r"^#[0-9a-fA-F]{6}$")
-    fit: Literal["slim", "regular", "relaxed", "wide"]
+    fit: Literal["slim", "regular", "relaxed", "wide", "tapered"]
     length: Literal["short", "regular", "long"]
     rise: Literal["low", "mid", "high"] | None = None
     pattern: Pattern = "solid"
@@ -160,6 +170,8 @@ class GarmentAttributes(StrictModel):
             self.fit != "regular" or self.length != "regular"
         ):
             raise ValueError("shoes and accessories use regular fit and length")
+        if self.fit == "tapered" and self.slot != "bottom":
+            raise ValueError("tapered fit is only for trousers")
         if self.kind == "shorts" and self.length != "short":
             raise ValueError("shorts must use short length")
         if self.slot == "shoes" and self.pattern != "solid":

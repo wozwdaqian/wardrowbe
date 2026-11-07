@@ -417,7 +417,7 @@ class GarmentChanges(Args):
     kind: str | None = None
     color: str | None = Field(None, description="hex color from the palette")
     material: str | None = None
-    fit: Literal["slim", "regular", "relaxed", "wide"] | None = None
+    fit: Literal["slim", "regular", "relaxed", "wide", "tapered"] | None = None
     length: Literal["short", "regular", "long"] | None = None
     rise: Literal["low", "mid", "high"] | None = None
     pattern: Literal["solid", "stripe", "check", "herringbone", "dot"] | None = None

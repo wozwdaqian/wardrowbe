@@ -11,8 +11,8 @@
       },
       "keywords": {"zh": ["宽松", "叠穿", "大地色", "阔腿裤", "无 logo"], "en": ["relaxed", "layered", "earth tones", "wide trousers", "no logos"]},
       "tips": {
-        "zh": ["先从一件宽松衬衫当外套开始，里面配白 T", "裤子选直筒或微阔，裤长到鞋面不堆积", "全身控制在三个颜色以内，以卡其、藏青、军绿为主"],
-        "en": ["Start with a loose shirt worn open over a white tee", "Pick straight or slightly wide trousers that just reach the shoe", "Keep to three colours, mostly khaki, navy and olive"]
+        "zh": ["先从一件宽松衬衫当外套开始，里面配白 T", "裤子选宽锥形：大腿有余量、裤脚收窄，裤长到脚踝露出袜子", "全身控制在三个颜色以内，以卡其、藏青、军绿为主"],
+        "en": ["Start with a loose shirt worn open over a white tee", "Pick wide tapered trousers: room in the thigh, a narrower hem, cropped to show the socks", "Keep to three colours, mostly khaki, navy and olive"]
       },
       "pitfalls": {
         "zh": ["整身都大一号会显得邋遢，宽松要有一处收住（如露出脚踝或袖口卷起）", "大 logo 和亮色会破坏低调的感觉"],
@@ -24,20 +24,22 @@
         {"slot": "top", "kind": "shirt", "color": "#b5ccd4", "fit": "relaxed"},
         {"slot": "top", "kind": "tshirt", "color": "#ffffff", "fit": "relaxed"},
         {"slot": "outerwear", "kind": "overshirt", "color": "#d3be97", "fit": "relaxed"},
-        {"slot": "bottom", "kind": "chinos", "color": "#243b55", "fit": "wide"},
+        {"slot": "bottom", "kind": "chinos", "color": "#243b55", "fit": "tapered", "length": "short"},
         {"slot": "shoes", "kind": "sneakers", "color": "#ffffff"},
-        {"slot": "accessory", "kind": "cap", "color": "#243b55"}
+        {"slot": "accessory", "kind": "bucket_hat", "color": "#243b55"},
+        {"slot": "accessory", "kind": "socks", "color": "#ffffff"}
       ],
       "looks": [
         {
           "title": {"zh": "衬衫当外套的松弛叠穿", "en": "Shirt worn open as a layer"},
-          "tags": {"zh": ["宽松叠穿", "燕麦色", "阔腿裤"], "en": ["loose layers", "oatmeal", "wide trousers"]},
+          "tags": {"zh": ["宽松叠穿", "燕麦色", "宽锥形裤"], "en": ["loose layers", "oatmeal", "wide tapered trousers"]},
           "garments": [
             {"slot": "top", "kind": "tshirt", "color": "#ffffff", "fit": "relaxed"},
             {"slot": "outerwear", "kind": "overshirt", "color": "#d3be97", "fit": "relaxed", "length": "long"},
-            {"slot": "bottom", "kind": "chinos", "color": "#243b55", "fit": "wide"},
+            {"slot": "bottom", "kind": "chinos", "color": "#243b55", "fit": "tapered", "length": "short"},
             {"slot": "shoes", "kind": "sneakers", "color": "#ffffff"},
-            {"slot": "accessory", "kind": "cap", "color": "#243b55"}
+            {"slot": "accessory", "kind": "bucket_hat", "color": "#243b55"},
+            {"slot": "accessory", "kind": "socks", "color": "#ffffff"}
           ]
         },
         {
@@ -56,7 +58,7 @@
           "tags": {"zh": ["军绿", "浅蓝衬衫", "上深下浅"], "en": ["olive", "pale blue shirt", "dark over light"]},
           "garments": [
             {"slot": "top", "kind": "shirt", "color": "#b5ccd4", "fit": "relaxed"},
-            {"slot": "outerwear", "kind": "jacket", "color": "#3e5143", "fit": "relaxed"},
+            {"slot": "outerwear", "kind": "jacket", "color": "#7a7442", "fit": "relaxed"},
             {"slot": "bottom", "kind": "chinos", "color": "#efe8dd", "fit": "wide"},
             {"slot": "shoes", "kind": "sneakers", "color": "#111827"}
           ]
@@ -84,7 +86,7 @@
       "search": {"zh": ["阿美咔叽 穿搭", "美式复古 男 牛仔"], "ja": ["アメカジ コーデ メンズ"]},
       "brands": ["Levi's", "Champion", "L.L.Bean", "orSlow", "Red Wing"],
       "starter": [
-        {"slot": "bottom", "kind": "jeans", "color": "#243b55", "fit": "regular"},
+        {"slot": "bottom", "kind": "jeans", "color": "#2b3a67", "fit": "regular"},
         {"slot": "top", "kind": "shirt", "color": "#803e47", "pattern": "check"},
         {"slot": "top", "kind": "sweatshirt", "color": "#aeb4bb"},
         {"slot": "top", "kind": "tshirt", "color": "#efe8dd"},
@@ -97,7 +99,7 @@
           "tags": {"zh": ["格纹", "深蓝牛仔", "棕色皮靴"], "en": ["check", "dark denim", "brown boots"]},
           "garments": [
             {"slot": "top", "kind": "shirt", "color": "#803e47", "pattern": "check"},
-            {"slot": "bottom", "kind": "jeans", "color": "#243b55"},
+            {"slot": "bottom", "kind": "jeans", "color": "#2b3a67"},
             {"slot": "shoes", "kind": "boots", "color": "#744f37"},
             {"slot": "accessory", "kind": "belt", "color": "#744f37"}
           ]
@@ -109,7 +111,7 @@
             {"slot": "top", "kind": "tshirt", "color": "#ffffff"},
             {"slot": "top", "kind": "sweatshirt", "color": "#aeb4bb", "fit": "relaxed"},
             {"slot": "outerwear", "kind": "jacket", "color": "#3e5143"},
-            {"slot": "bottom", "kind": "jeans", "color": "#243b55"},
+            {"slot": "bottom", "kind": "jeans", "color": "#2b3a67"},
             {"slot": "shoes", "kind": "sneakers", "color": "#ffffff"}
           ]
         },
@@ -146,12 +148,12 @@
       "search": {"zh": ["日系工装 穿搭 男", "军装风 男生"], "ja": ["ワークコーデ メンズ", "ミリタリー コーデ メンズ"]},
       "brands": ["Dickies", "Carhartt WIP", "orSlow", "Buzz Rickson's", "Engineered Garments"],
       "starter": [
-        {"slot": "bottom", "kind": "cargo_pants", "color": "#3e5143", "fit": "wide"},
+        {"slot": "bottom", "kind": "cargo_pants", "color": "#7a7442", "fit": "wide"},
         {"slot": "outerwear", "kind": "jacket", "color": "#b69b79"},
         {"slot": "top", "kind": "tshirt", "color": "#ffffff"},
-        {"slot": "top", "kind": "shirt", "color": "#3e5143", "fit": "relaxed"},
+        {"slot": "top", "kind": "shirt", "color": "#7a7442", "fit": "relaxed"},
         {"slot": "shoes", "kind": "boots", "color": "#111827"},
-        {"slot": "accessory", "kind": "cap", "color": "#3e5143"}
+        {"slot": "accessory", "kind": "cap", "color": "#7a7442"}
       ],
       "looks": [
         {
@@ -160,7 +162,7 @@
           "garments": [
             {"slot": "top", "kind": "tshirt", "color": "#ffffff"},
             {"slot": "outerwear", "kind": "jacket", "color": "#b69b79", "fit": "relaxed"},
-            {"slot": "bottom", "kind": "cargo_pants", "color": "#3e5143", "fit": "wide"},
+            {"slot": "bottom", "kind": "cargo_pants", "color": "#7a7442", "fit": "wide"},
             {"slot": "shoes", "kind": "boots", "color": "#111827"}
           ]
         },
@@ -168,10 +170,10 @@
           "title": {"zh": "军装衬衫配卡其工装裤", "en": "Field shirt with khaki cargos"},
           "tags": {"zh": ["军绿衬衫", "卡其", "棒球帽"], "en": ["olive shirt", "khaki", "cap"]},
           "garments": [
-            {"slot": "top", "kind": "shirt", "color": "#3e5143", "fit": "relaxed"},
+            {"slot": "top", "kind": "shirt", "color": "#7a7442", "fit": "relaxed"},
             {"slot": "bottom", "kind": "cargo_pants", "color": "#d3be97", "fit": "wide"},
             {"slot": "shoes", "kind": "sneakers", "color": "#ffffff"},
-            {"slot": "accessory", "kind": "cap", "color": "#3e5143"}
+            {"slot": "accessory", "kind": "cap", "color": "#7a7442"}
           ]
         },
         {
@@ -209,10 +211,11 @@
       "starter": [
         {"slot": "outerwear", "kind": "fleece", "color": "#d3be97", "fit": "relaxed"},
         {"slot": "outerwear", "kind": "jacket", "color": "#c7773a", "fit": "relaxed"},
-        {"slot": "bottom", "kind": "cargo_pants", "color": "#3e5143"},
+        {"slot": "bottom", "kind": "cargo_pants", "color": "#7a7442"},
         {"slot": "top", "kind": "tshirt", "color": "#efe8dd"},
         {"slot": "shoes", "kind": "sneakers", "color": "#363c41"},
-        {"slot": "accessory", "kind": "bag", "color": "#111827"}
+        {"slot": "accessory", "kind": "bag", "color": "#111827"},
+        {"slot": "accessory", "kind": "bucket_hat", "color": "#d3be97"}
       ],
       "looks": [
         {
@@ -221,8 +224,9 @@
           "garments": [
             {"slot": "top", "kind": "tshirt", "color": "#efe8dd"},
             {"slot": "outerwear", "kind": "fleece", "color": "#d3be97", "fit": "relaxed"},
-            {"slot": "bottom", "kind": "cargo_pants", "color": "#3e5143"},
-            {"slot": "shoes", "kind": "sneakers", "color": "#363c41"}
+            {"slot": "bottom", "kind": "cargo_pants", "color": "#7a7442"},
+            {"slot": "shoes", "kind": "sneakers", "color": "#363c41"},
+            {"slot": "accessory", "kind": "bucket_hat", "color": "#d3be97"}
           ]
         },
         {
@@ -298,10 +302,10 @@
         },
         {
           "title": {"zh": "波点衬衫配棕色宽裤", "en": "Polka-dot shirt with brown wide trousers"},
-          "tags": {"zh": ["波点", "杏黄", "宽裤"], "en": ["polka dot", "apricot", "wide trousers"]},
+          "tags": {"zh": ["波点", "杏黄", "灯芯绒宽裤"], "en": ["polka dot", "apricot", "corduroy wide trousers"]},
           "garments": [
             {"slot": "top", "kind": "shirt", "color": "#e8d9a4", "fit": "relaxed", "pattern": "dot"},
-            {"slot": "bottom", "kind": "trousers", "color": "#744f37", "fit": "wide"},
+            {"slot": "bottom", "kind": "trousers", "color": "#744f37", "fit": "wide", "construction": "corduroy"},
             {"slot": "shoes", "kind": "loafers", "color": "#111827"}
           ]
         }
@@ -379,8 +383,8 @@
       },
       "keywords": {"zh": ["合身", "衬衫", "西裤", "皮鞋", "素色"], "en": ["well-fitting", "shirt", "tailored trousers", "leather shoes", "plain colours"]},
       "tips": {
-        "zh": ["先备一件合身白衬衫、一条深灰西裤、一双黑乐福", "所有单品先保证尺码合适，再考虑款式", "颜色以黑白灰藏青为主，最多加一个点缀色"],
-        "en": ["Start with a well-fitting white shirt, charcoal trousers and black loafers", "Get the size right before worrying about design", "Stick to black, white, grey and navy plus at most one accent"]
+        "zh": ["先备一件合身白衬衫、一条深灰九分锥形西裤、一双黑乐福", "所有单品先保证尺码合适，再考虑款式", "颜色以黑白灰藏青为主，最多加一个点缀色"],
+        "en": ["Start with a well-fitting white shirt, ankle-length tapered charcoal trousers and black loafers", "Get the size right before worrying about design", "Stick to black, white, grey and navy plus at most one accent"]
       },
       "pitfalls": {
         "zh": ["全套太正式会像去上班面试，换一件针织或 Polo 放松一下", "过紧的修身会显拘束"],
@@ -389,8 +393,8 @@
       "search": {"zh": ["日系简约穿搭 男", "きれいめ 穿搭"], "ja": ["きれいめ コーデ メンズ"]},
       "brands": ["UNIQLO", "nano・universe", "SHIPS", "UNITED ARROWS"],
       "starter": [
-        {"slot": "top", "kind": "shirt", "color": "#ffffff", "fit": "slim"},
-        {"slot": "bottom", "kind": "trousers", "color": "#363c41"},
+        {"slot": "top", "kind": "shirt", "color": "#ffffff", "fit": "regular"},
+        {"slot": "bottom", "kind": "trousers", "color": "#363c41", "fit": "tapered", "length": "short"},
         {"slot": "outerwear", "kind": "blazer", "color": "#243b55"},
         {"slot": "top", "kind": "turtleneck", "color": "#111827"},
         {"slot": "shoes", "kind": "loafers", "color": "#111827"},
@@ -401,9 +405,9 @@
           "title": {"zh": "白衬衫、藏青西装外套和深灰西裤", "en": "White shirt, navy blazer, charcoal trousers"},
           "tags": {"zh": ["合身", "藏青", "乐福鞋"], "en": ["well-fitting", "navy", "loafers"]},
           "garments": [
-            {"slot": "top", "kind": "shirt", "color": "#ffffff", "fit": "slim"},
+            {"slot": "top", "kind": "shirt", "color": "#ffffff", "fit": "regular"},
             {"slot": "outerwear", "kind": "blazer", "color": "#243b55"},
-            {"slot": "bottom", "kind": "trousers", "color": "#363c41"},
+            {"slot": "bottom", "kind": "trousers", "color": "#363c41", "fit": "tapered", "length": "short"},
             {"slot": "shoes", "kind": "loafers", "color": "#111827"}
           ]
         },
@@ -422,7 +426,7 @@
           "tags": {"zh": ["针织 Polo", "藏青", "手表"], "en": ["knit polo", "navy", "watch"]},
           "garments": [
             {"slot": "top", "kind": "polo", "color": "#efe8dd"},
-            {"slot": "bottom", "kind": "trousers", "color": "#243b55"},
+            {"slot": "bottom", "kind": "trousers", "color": "#243b55", "fit": "tapered", "length": "short"},
             {"slot": "shoes", "kind": "loafers", "color": "#744f37"},
             {"slot": "accessory", "kind": "watch", "color": "#aeb4bb"}
           ]
@@ -462,8 +466,8 @@
           "title": {"zh": "牛津纺衬衫加酒红针织背心", "en": "Oxford shirt with a burgundy knit vest"},
           "tags": {"zh": ["牛津纺", "针织背心", "卡其裤"], "en": ["oxford", "knit vest", "chinos"]},
           "garments": [
-            {"slot": "top", "kind": "shirt", "color": "#b5ccd4"},
-            {"slot": "top", "kind": "vest", "color": "#803e47"},
+            {"slot": "top", "kind": "shirt", "color": "#b5ccd4", "construction": "oxford"},
+            {"slot": "top", "kind": "vest", "color": "#803e47", "construction": "knit"},
             {"slot": "bottom", "kind": "chinos", "color": "#d3be97"},
             {"slot": "shoes", "kind": "loafers", "color": "#744f37"}
           ]
@@ -481,11 +485,11 @@
         },
         {
           "title": {"zh": "格纹衬衫外搭藏青毛衣", "en": "Check shirt under a navy sweater"},
-          "tags": {"zh": ["格纹", "藏青毛衣", "德比鞋"], "en": ["check", "navy sweater", "derbies"]},
+          "tags": {"zh": ["格纹", "藏青毛衣", "灯芯绒裤"], "en": ["check", "navy sweater", "corduroys"]},
           "garments": [
             {"slot": "top", "kind": "shirt", "color": "#efe8dd", "pattern": "check"},
             {"slot": "top", "kind": "knit", "color": "#243b55"},
-            {"slot": "bottom", "kind": "chinos", "color": "#b69b79"},
+            {"slot": "bottom", "kind": "chinos", "color": "#b69b79", "construction": "corduroy"},
             {"slot": "shoes", "kind": "derbies", "color": "#744f37"}
           ]
         }

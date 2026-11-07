@@ -10,8 +10,8 @@ import random
 from pydantic import ValidationError
 
 from app.schemas.body_styling import SLOT_KINDS, BodyFact, BodyStyleContent, DraftOutfit
-from app.schemas.styling_profile import CATALOG, StylingProfile
-from app.services.body_style_rendering import COLORS, FITS, KINDS, LENGTHS, RISES
+from app.schemas.styling_profile import CATALOG, STYLE_DATA, StylingProfile
+from app.services.body_style_rendering import COLORS, FITS, KINDS, LENGTHS, PANT_LENGTHS, RISES
 from app.services.body_style_rules import StyleRules, outfit_violations
 
 NEUTRALS = {"white", "grey", "black", "beige", "brown"}
@@ -44,7 +44,7 @@ LEATHER = ["leather", "vegan_leather", "synthetic"]
 CONSTRUCTIONS = {
     "tshirt": ["jersey"],
     "polo": ["pique", "jersey"],
-    "shirt": ["oxford", "poplin", "linen_weave"],
+    "shirt": ["oxford", "poplin", "linen_weave", "corduroy"],
     "turtleneck": ["knit", "jersey"],
     "knit": ["knit"],
     "sweatshirt": ["fleece", "jersey"],
@@ -53,14 +53,14 @@ CONSTRUCTIONS = {
     "fleece": ["fleece"],
     "cardigan": ["knit"],
     "vest": ["twill", "knit"],
-    "trousers": ["twill"],
-    "chinos": ["twill"],
+    "trousers": ["twill", "corduroy"],
+    "chinos": ["twill", "corduroy"],
     "jeans": ["denim_weave"],
     "shorts": ["twill", "linen_weave"],
     "blazer": ["twill", "linen_weave"],
     "suit_jacket": ["twill"],
-    "jacket": ["canvas", "technical"],
-    "overshirt": ["flannel", "twill", "canvas"],
+    "jacket": ["canvas", "technical", "corduroy"],
+    "overshirt": ["flannel", "twill", "canvas", "corduroy"],
     "coat": ["flannel", "twill"],
     "trench": ["twill", "technical"],
     "down_jacket": ["technical"],
@@ -163,6 +163,10 @@ def _material(kind: str, slot: str, rules: StyleRules) -> str | None:
         options = ["silk", "wool", "synthetic"]
     if kind in {"cap", "bag"}:
         options = ["cotton", "leather", "synthetic"]
+    if kind == "bucket_hat":
+        options = ["cotton", "synthetic"]
+    if kind == "socks":
+        options = ["cotton", "wool_blend", "synthetic"]
     if kind == "glasses":
         options = ["synthetic"]
     if rules.season == "summer":
@@ -410,6 +414,261 @@ def _outfit(index, look, rules, palette, zh, available, used_tops):
     return outfit
 
 
+STYLES = {style["id"]: style for style in STYLE_DATA}
+BOLD = {"stripe", "check", "dot"}
+COLOR_TEXTS = {
+    "accent": (
+        "一件单品承担重点色，其余用中性色衔接，避免多种颜色抢眼。",
+        "One piece carries the accent; neutrals connect the rest so colors do not compete.",
+    ),
+    "tonal": (
+        "整套用相近的色调，靠深浅变化区分层次。",
+        "Close tones keep the look calm; depth changes separate the layers.",
+    ),
+    "contrast": (
+        "深浅分明的单品形成明暗对比，上下分界清楚。",
+        "Light and dark pieces give a clear split between top and bottom.",
+    ),
+    "echo": (
+        "两处单品用同一颜色前后呼应，让整套更有整体感。",
+        "Two pieces share one color so the outfit reads as a whole.",
+    ),
+}
+
+
+def direction_for(profile: StylingProfile, style: str) -> list[str]:
+    """The quiz's sub-styles, when the requested broad style is the main one's family.
+
+    An explicit different broad style (say classic for a Cityboy) keeps the generic looks.
+    """
+    styles = list(profile.preferred_styles)
+    if not styles or STYLES[styles[0]]["base_style"] != style:
+        return []
+    return styles
+
+
+def direction_looks(direction: list[str]) -> list[tuple[str, int]]:
+    """Three (style, look index) templates: the main style's looks, the last from the second."""
+    main = [(direction[0], i) for i in range(len(STYLES[direction[0]]["looks"]))][:3]
+    if len(direction) > 1 and STYLES[direction[1]]["looks"]:
+        main[-1] = (direction[1], 0)
+    return main
+
+
+def _keep(value: str, values: list[str], rules: StyleRules, slot: str, attribute: str) -> str:
+    """The template's own cut unless a proportion rule avoids it."""
+    if value not in _avoided(rules, slot, attribute):
+        return value
+    return _choose(values, rules, slot, attribute, "regular" if attribute != "rise" else "mid")
+
+
+def _similar(palette: Palette, color: str, exclude=()) -> str:
+    """The template color, or one of the same lightness when the user avoids its family."""
+    if color in palette.lightness:
+        return color
+    wanted = CATALOG["colors"][color]["lightness"]
+    return palette._pick(lambda h: palette.lightness[h] == wanted, exclude)
+
+
+def _template_garment(spec: dict, kind: str, color: str, rules: StyleRules, zh: bool) -> dict:
+    slot = spec["slot"]
+    g = _garment(slot, kind, color, rules, zh, spec.get("pattern", "solid"))
+    if slot in {"top", "outerwear"}:
+        g["fit"] = _keep(
+            spec.get("fit", "regular"), ["slim", "regular", "relaxed"], rules, slot, "fit"
+        )
+        g["length"] = _keep(
+            spec.get("length", g["length"]), ["short", "regular", "long"], rules, slot, "length"
+        )
+    if slot == "bottom":
+        fits = ["slim", "regular", "relaxed", "wide", "tapered"]
+        g["fit"] = _keep(spec.get("fit", "regular"), fits, rules, slot, "fit")
+        g["length"] = (
+            "short"
+            if kind == "shorts"
+            else _keep(
+                spec.get("length", "regular"), ["short", "regular", "long"], rules, slot, "length"
+            )
+        )
+        g["rise"] = _keep(spec.get("rise", "mid"), ["low", "mid", "high"], rules, slot, "rise")
+    construction = spec.get("construction")
+    banned = set(rules.season_rule.banned_constructions)
+    if construction and g["fabric"] and construction not in banned and kind == spec["kind"]:
+        g["fabric"]["construction"] = construction
+    return g
+
+
+def _color_plan(outfit: dict) -> dict | None:
+    """The first color strategy the actual garment colors support."""
+    by_slot: dict[str, set[str]] = {}
+    for g in outfit["garments"]:
+        by_slot.setdefault(g["slot"], set()).add(g["color"])
+    shared = [
+        color
+        for color in {g["color"] for g in outfit["garments"]}
+        if sum(color in colors for colors in by_slot.values()) >= 2
+    ]
+    plans = []
+    if shared:
+        color = sorted(shared)[0]
+        slots = [slot for slot, colors in by_slot.items() if color in colors]
+        plans.append(("echo", [], slots))
+    plans.append(("tonal", [], []))
+    chromatic = [
+        slot
+        for slot, colors in by_slot.items()
+        if len(colors) == 1 and CATALOG["colors"][next(iter(colors))]["family"] not in NEUTRALS
+    ]
+    if len(chromatic) == 1:
+        plans.append(("accent", chromatic, []))
+    plans.append(("contrast", [], []))
+    for strategy, accent, echo in plans:
+        candidate = {"strategy": strategy, "accent_slots": accent, "echo_slots": echo}
+        try:
+            DraftOutfit.model_validate({**outfit, "color_plan": candidate})
+            return candidate
+        except ValidationError:
+            continue
+    return None
+
+
+def _template_outfit(style_id, look_index, rules, palette, zh, available) -> dict | None:
+    """One look from the Japanese style data, adapted to the rules; None if it cannot be."""
+    look = STYLES[style_id]["looks"][look_index]
+    garments, changed = [], False
+    used: list[str] = []
+    for spec in look["garments"]:
+        slot, wanted = spec["slot"], spec["kind"]
+        layered = slot == "top" and any(g["slot"] == "top" for g in garments)
+        if _allowed(rules, slot, wanted):
+            kind = wanted
+        elif slot in {"accessory", "outerwear"} or layered:
+            # An extra layer or accessory the season or occasion rules out is simply left off.
+            changed = True
+            continue
+        else:
+            kind, changed = _kind(rules, slot, wanted), True
+        color = _similar(palette, spec["color"], used)
+        changed |= color != spec["color"]
+        used.append(color)
+        garments.append(_template_garment(spec, kind, color, rules, zh))
+    slots = {g["slot"] for g in garments}
+    wants_outer = rules.season_rule.requires_outerwear or (
+        rules.occasion in {"work", "formal"} and rules.season != "summer"
+    )
+    if wants_outer and "outerwear" not in slots:
+        options = [*OUTERWEAR[rules.season], *sorted(SLOT_KINDS["outerwear"])]
+        if rules.occasion == "formal":
+            options = ["suit_jacket", "blazer", "coat", *options]
+        kind = next((k for k in options if _allowed(rules, "outerwear", k)), None)
+        if kind is None:
+            return None
+        bottom = next(g for g in garments if g["slot"] == "bottom")
+        color = palette.dark(exclude=[bottom["color"]])
+        outer = _garment("outerwear", kind, color, rules, zh)
+        garments.insert(next(i for i, g in enumerate(garments) if g["slot"] == "shoes"), outer)
+        changed = True
+    if sum(g["pattern"] in BOLD for g in garments) > 1:
+        return None
+    lang = 0 if zh else 1
+    top = next(g for g in garments if g["slot"] == "top")
+    bottom = next(g for g in garments if g["slot"] == "bottom")
+    if changed:
+        title = _text(
+            zh,
+            f"{COLORS[top['color']][0]}{KINDS[top['kind']][0]}与{KINDS[bottom['kind']][0]}",
+            f"{COLORS[top['color']][1].capitalize()} {KINDS[top['kind']][1]} "
+            f"with {KINDS[bottom['kind']][1]}",
+        )
+    else:
+        title = look["title"]["zh" if zh else "en"]
+    measured = {"height", "waist"} <= available
+    lead = _text(zh, "结合{{height}}与{{waist}}，", "With {{height}} and {{waist}} in mind, ")
+    style_name = STYLES[style_id]["name"]["zh" if zh else "en"]
+    pants = PANT_LENGTHS[bottom["length"]][lang] if bottom["kind"] != "shorts" else ""
+    body_reason = (lead if measured else "") + _text(
+        zh,
+        f"按{style_name}的轮廓，{KINDS[top['kind']][0]}{FITS[top['fit']][0]}、"
+        f"{LENGTHS[top['length']][0]}，{KINDS[bottom['kind']][0]}用{RISES[bottom['rise']][0]}"
+        f"{FITS[bottom['fit']][0]}" + (f"、{pants}" if pants else "") + "。",
+        f"following the {style_name} silhouette, the {KINDS[top['kind']][1]} is "
+        f"{FITS[top['fit']][1]} with {LENGTHS[top['length']][1]}, and the "
+        f"{KINDS[bottom['kind']][1]} are {RISES[bottom['rise']][1]} and {FITS[bottom['fit']][1]}"
+        + (f", {pants}" if pants else "")
+        + ".",
+    )
+    loose_top = top["fit"] in {"relaxed", "wide"}
+    loose_bottom = bottom["fit"] in {"relaxed", "wide"}
+    socks = any(g["kind"] == "socks" for g in garments)
+    if socks and bottom["length"] == "short":
+        tip = _text(
+            zh,
+            "九分裤脚停在脚踝上方，露出一截袜子，和帽子或上衣颜色呼应。",
+            "Let the ankle-length hem stop above the ankle so a strip of sock shows, echoing the hat or top.",
+        )
+    elif loose_top and loose_bottom:
+        tip = _text(
+            zh,
+            "上下都宽松时要收住一处：裤脚露出脚踝，或把袖口卷起一到两折。",
+            "When top and bottom are both loose, anchor one point: show the ankle or roll the cuffs once or twice.",
+        )
+    elif sum(g["slot"] == "top" for g in garments) == 2:
+        tip = _text(
+            zh,
+            "内层领口和下摆略露出外层，形成清楚的层次。",
+            "Let the base layer's collar and hem show slightly for a clean layered look.",
+        )
+    else:
+        tip = _text(
+            zh,
+            "上衣前摆轻塞进裤腰，侧面和后面自然垂下，腰线更清楚。",
+            "Tuck just the front of the top into the trousers and leave the sides out for a clearer waistline.",
+        )
+    rule_evidence = [e for e in ("rule_trouser_leg", "rule_top_length") if e in available]
+    outfit = {
+        "title": title[:80],
+        "garments": garments,
+        "body_reason": body_reason,
+        "evidence": ((["height", "waist"] if measured else ["rule_occasion"]) + rule_evidence)[:5],
+        "styling_tip": tip,
+        "color_reason": {
+            "text": COLOR_TEXTS["tonal"][lang],
+            "evidence": [
+                e for e in ("preferred_color_families", "contrast_preference") if e in available
+            ],
+        },
+        "fabric_reason": {
+            "text": _text(
+                zh,
+                "面料沿用这个风格常见的组织和厚薄，整套保持相近的质感。",
+                "Fabrics follow this style's usual weaves and weights so the textures stay close.",
+            ),
+            "evidence": [e for e in ("fabric_preferences",) if e in available],
+        },
+    }
+    plan = _color_plan(outfit)
+    if plan is None:
+        return None
+    outfit["color_plan"] = plan
+    outfit["color_reason"]["text"] = COLOR_TEXTS[plan["strategy"]][lang]
+    try:
+        draft = DraftOutfit.model_validate(outfit)
+    except ValidationError:
+        return None
+    if outfit_violations(draft.garments, rules):
+        return None
+    return outfit
+
+
+def _signature(outfit: dict) -> tuple:
+    return tuple(
+        sorted(
+            (g["slot"], g["kind"], g["color"], g["fit"], g["length"], g["rise"] or "", g["pattern"])
+            for g in outfit["garments"]
+        )
+    )
+
+
 def rule_based_draft(
     facts: list[BodyFact],
     profile: StylingProfile,
@@ -417,6 +676,7 @@ def rule_based_draft(
     style: str,
     zh: bool,
     seed: int = 0,
+    direction: list[str] | None = None,
 ) -> dict:
     rng = random.Random(seed)
     palette = Palette(profile, rules, rng)
@@ -425,9 +685,18 @@ def rule_based_draft(
     looks = list(LOOKS[style])
     if seed:
         rng.shuffle(looks)
-    outfits = [
-        _outfit(i, look, rules, palette, zh, available, used_tops) for i, look in enumerate(looks)
-    ]
+    templates = direction_looks(direction) if direction else []
+    if seed:
+        rng.shuffle(templates)
+    outfits = []
+    for i, look in enumerate(looks):
+        outfit = None
+        if i < len(templates):
+            outfit = _template_outfit(*templates[i], rules, palette, zh, available)
+            if outfit and _signature(outfit) in {_signature(o) for o in outfits}:
+                outfit = None
+        # A template the rules cannot carry falls back to the generic look for that slot.
+        outfits.append(outfit or _outfit(i, look, rules, palette, zh, available, used_tops))
     fit_texts = {
         "top_length": _text(
             zh,
@@ -455,12 +724,22 @@ def rule_based_draft(
         rule_id = f"rule_{area}"
         evidence = ["height"] + ([rule_id] if rule_id in available else [])
         fit_advice.append({"area": area, "text": text, "evidence": evidence})
-    draft = {
-        "summary": _text(
+    summary = _text(
+        zh,
+        "这是按固定穿搭规则生成的基础建议，从{{height}}和{{waist}}出发，兼顾季节与场合。",
+        "These are rule-based starter outfits built from {{height}} and {{waist}}, matched to the season and occasion.",
+    )
+    if direction:
+        names = [STYLES[s]["name"]["zh" if zh else "en"] for s in direction]
+        summary = _text(
             zh,
-            "这是按固定穿搭规则生成的基础建议，从{{height}}和{{waist}}出发，兼顾季节与场合。",
-            "These are rule-based starter outfits built from {{height}} and {{waist}}, matched to the season and occasion.",
-        ),
+            f"这是按你的日系风格方向（{'、'.join(names)}）生成的基础建议，"
+            "从{{height}}和{{waist}}出发，兼顾季节与场合。",
+            f"These rule-based outfits follow your Japanese style direction ({', '.join(names)}), "
+            "built from {{height}} and {{waist}} and matched to the season and occasion.",
+        )
+    draft = {
+        "summary": summary,
         "observations": [
             {
                 "text": _text(
@@ -510,10 +789,11 @@ def rule_based_content(
     style: str,
     locale: str,
     seed: int = 0,
+    direction: list[str] | None = None,
 ) -> BodyStyleContent:
     from app.services.body_styling_service import parse_result
 
-    draft = rule_based_draft(facts, profile, rules, style, locale.startswith("zh"), seed)
+    draft = rule_based_draft(facts, profile, rules, style, locale.startswith("zh"), seed, direction)
     return parse_result(json.dumps(draft, ensure_ascii=False), facts, locale, profile, rules)
 
 
@@ -524,8 +804,13 @@ def today_outfit(
     style: str,
     locale: str,
     seed: int,
+    direction: list[str] | None = None,
 ) -> dict:
-    """One quick rule-based look; measurements are optional, so new users get one too."""
+    """One quick rule-based look; measurements are optional, so new users get one too.
+
+    With a Japanese style direction, one of its looks is adapted first; the generic look for
+    the broad style is the fallback when the rules cannot carry it.
+    """
     from app.services.body_style_rendering import render_garment, resolve_text
 
     zh = locale.startswith("zh")
@@ -534,7 +819,15 @@ def today_outfit(
     available = {f.id for f in facts} | rules.evidence_ids()
     index = seed % 3
     look = LOOKS[style][rng.randrange(len(LOOKS[style]))]
-    outfit = DraftOutfit.model_validate(_outfit(index, look, rules, palette, zh, available, []))
+    templates = direction_looks(direction) if direction else []
+    template = (
+        _template_outfit(*templates[seed % len(templates)], rules, palette, zh, available)
+        if templates
+        else None
+    )
+    outfit = DraftOutfit.model_validate(
+        template or _outfit(index, look, rules, palette, zh, available, [])
+    )
     errors = outfit_violations(outfit.garments, rules)
     if errors:
         raise ValueError("; ".join(errors))

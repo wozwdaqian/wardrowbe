@@ -53,6 +53,9 @@ def render_spec(spec: dict, rules: StyleRules, zh: bool) -> dict | None:
         garment["length"] = "short" if spec["kind"] == "shorts" else spec.get("length", "regular")
     if spec["slot"] == "bottom":
         garment["rise"] = spec.get("rise", "mid")
+    construction = spec.get("construction")
+    if construction and garment["fabric"]:
+        garment["fabric"]["construction"] = construction
     try:
         return render_garment(DraftGarment.model_validate(garment), zh)
     except ValidationError:

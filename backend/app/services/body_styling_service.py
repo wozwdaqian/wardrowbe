@@ -22,7 +22,7 @@ from app.schemas.body_styling import (
 )
 from app.schemas.styling_profile import CATALOG, StylingProfile
 from app.services.ai_service import AIService, TextGenerationResult
-from app.services.body_style_fallback import rule_based_content
+from app.services.body_style_fallback import direction_for, rule_based_content
 from app.services.body_style_rendering import missing_information, render_garment, resolve_text
 from app.services.body_style_rules import StyleRules, build_rules, default_rules, enforce_rules
 from app.services.notification_providers import NotificationMessage
@@ -185,7 +185,9 @@ Do not return garment description, color_name or unknowns. Choose colors and mat
 Keep outfit titles neutral; explain wearing technique and proportion reasoning in body_reason/styling_tip.
 For tops/outerwear, short/regular/long means waist/hip/below-hip length; for trousers short means ankle,
 regular means full length, long means a longer break. Shorts are always short. Fit describes silhouette,
-not a clothing size. Use fit=regular and length=regular for shoes/accessories. Make season and occasion
+not a clothing size; fit=tapered is only for trousers (room at hip and thigh, narrowing to the hem).
+Corduroy is an autumn/winter construction; bucket_hat and socks are accessories, and visible socks suit
+ankle-length trousers. Use fit=regular and length=regular for shoes/accessories. Make season and occasion
 appropriate choices. Return only the JSON object matching the schema, no markdown.
 
 STYLE DIRECTION:
@@ -300,7 +302,8 @@ async def generate_rule_based_style(
     profile, facts, rules, snapshot = prepare_style(
         user, measurements, request, recent_feedback, "rules"
     )
-    result = rule_based_content(facts, profile, rules, request.style, user.locale, seed)
+    direction = direction_for(profile, request.style)
+    result = rule_based_content(facts, profile, rules, request.style, user.locale, seed, direction)
     return await save_style(db, user, snapshot, facts, result, "rules")
 
 

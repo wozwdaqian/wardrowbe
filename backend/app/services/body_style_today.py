@@ -16,7 +16,7 @@ from app.models.user import User
 from app.schemas.body_styling import BodyMeasurements, BodyStyleRequest
 from app.schemas.styling_profile import StylingProfile
 from app.services.ai_service import AIService
-from app.services.body_style_fallback import today_outfit
+from app.services.body_style_fallback import direction_for, today_outfit
 from app.services.body_style_rendering import resolve_text
 from app.services.body_style_rules import build_rules
 from app.services.body_styling_service import body_facts
@@ -99,7 +99,9 @@ async def build_today(
     facts = body_facts(measurements, profile) if measurements else []
     rules = build_rules(measurements, profile, request)
     seed = stable_seed(user.id, today, occasion, style, reroll)
-    outfit = today_outfit(facts, profile, rules, style, user.locale, seed)
+    outfit = today_outfit(
+        facts, profile, rules, style, user.locale, seed, direction_for(profile, style)
+    )
     items = await db.scalar(
         select(func.count())
         .select_from(ClothingItem)

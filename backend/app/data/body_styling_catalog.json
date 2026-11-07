@@ -371,6 +371,10 @@
       "zh": "法兰绒",
       "en": "Flannel"
     },
+    "corduroy": {
+      "zh": "灯芯绒",
+      "en": "Corduroy"
+    },
     "denim_weave": {
       "zh": "牛仔斜纹",
       "en": "Denim twill"
@@ -598,6 +602,18 @@
       "en": "Pale yellow",
       "family": "yellow",
       "lightness": "light"
+    },
+    "#7a7442": {
+      "zh": "橄榄卡其",
+      "en": "Olive khaki",
+      "family": "green",
+      "lightness": "medium"
+    },
+    "#2b3a67": {
+      "zh": "靛蓝色",
+      "en": "Indigo",
+      "family": "blue",
+      "lightness": "dark"
     }
   },
   "patterns": {

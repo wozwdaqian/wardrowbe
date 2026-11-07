@@ -80,6 +80,8 @@ KIND_TYPES: dict[str, tuple[set[str], set[str]]] = {
     "belt": ({"belt"}, set()),
     "bag": ({"bag"}, set()),
     "cap": ({"hat"}, set()),
+    "bucket_hat": ({"hat"}, {"bucket", "渔夫"}),
+    "socks": ({"socks"}, set()),
     "tie": ({"tie"}, set()),
     "watch": ({"accessories"}, {"watch", "手表"}),
     "glasses": ({"accessories"}, {"glasses", "眼镜"}),

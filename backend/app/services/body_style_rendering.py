@@ -44,7 +44,9 @@ KINDS = {
     "scarf": ("围巾", "scarf"),
     "belt": ("腰带", "belt"),
     "bag": ("包", "bag"),
-    "cap": ("帽子", "cap"),
+    "cap": ("棒球帽", "cap"),
+    "bucket_hat": ("渔夫帽", "bucket hat"),
+    "socks": ("袜子", "socks"),
     "turtleneck": ("高领衫", "turtleneck"),
     "cardigan": ("开衫", "cardigan"),
     "vest": ("马甲", "vest"),
@@ -74,6 +76,7 @@ FITS = {
     "regular": ("合体", "regular"),
     "relaxed": ("宽松", "relaxed"),
     "wide": ("宽廓形", "wide"),
+    "tapered": ("锥形", "tapered"),
 }
 LENGTHS = {
     "short": ("下摆至腰线", "hem at waist"),
